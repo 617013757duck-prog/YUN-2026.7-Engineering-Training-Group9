@@ -8,13 +8,14 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/Login.vue')
+    component: () => import('@/views/Login.vue'),
+    meta: { noAuth: true }
   },
   {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['patient', 'doctor', 'follow', 'admin'] }
   }
 ]
 
@@ -23,8 +24,22 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫（暂时跳过，后续完善）
 router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+  const userRole = localStorage.getItem('role')
+  
+  if (to.meta.noAuth) {
+    return next()
+  }
+  
+  if (!token) {
+    return next('/login')
+  }
+  
+  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+    return next('/dashboard')
+  }
+  
   next()
 })
 
