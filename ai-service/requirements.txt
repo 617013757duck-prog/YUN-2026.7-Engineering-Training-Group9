@@ -1,0 +1,25 @@
+# FastAPI
+fastapi==0.110.0
+uvicorn==0.27.1
+python-multipart==0.0.9
+
+# Database
+pymysql==1.1.0
+sqlalchemy==2.0.27
+
+# AI & ML
+torch==2.2.0
+transformers==4.38.1
+langchain==0.1.11
+langchain-community==0.0.27
+langchain-core==0.1.33
+sentence-transformers==2.5.1
+
+# Vector Database
+faiss-cpu==1.7.4
+
+# Utilities
+pydantic==2.6.1
+python-dotenv==1.0.1
+loguru==0.7.2
+httpx==0.26.0
