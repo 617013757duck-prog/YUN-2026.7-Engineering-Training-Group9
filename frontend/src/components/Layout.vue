@@ -1,141 +1,123 @@
 <template>
   <div class="layout-container">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <el-icon size="28" class="logo-icon">User</el-icon>
-        <span class="logo-text">医疗随访平台</span>
+    <header class="layout-header">
+      <div class="header-left">
+        <div class="logo">
+          <svg width="32" height="32" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#409EFF" d="M512 96C264.58 96 64 296.58 64 544s200.58 448 448 448 448-200.58 448-448S759.42 96 512 96z"/>
+            <path fill="#fff" d="M512 192c160.71 0 290.93 130.22 290.93 290.93S672.71 773.86 512 773.86 221.07 643.64 221.07 482.93 351.29 192 512 192z"/>
+            <path fill="#409EFF" d="M512 288c101.71 0 184.93 83.22 184.93 184.93S613.71 657.86 512 657.86 327.07 574.64 327.07 472.93 410.29 288 512 288z"/>
+            <path fill="#fff" d="M512 384c53.02 0 96 42.98 96 96s-42.98 96-96 96-96-42.98-96-96 42.98-96 96-96z"/>
+          </svg>
+          <span class="logo-text">医疗预问诊平台</span>
+        </div>
       </div>
-      
-      <el-menu 
-        :default-active="activeMenu" 
-        class="sidebar-menu"
-        background-color="#1a1a2e"
-        text-color="#b8c5d6"
-        active-text-color="#fff"
-        router
-      >
-        <el-menu-item v-for="item in menuList" :key="item.path" :index="item.path">
-          <el-icon>{{ item.icon }}</el-icon>
-          <span>{{ item.name }}</span>
-        </el-menu-item>
-        
-        <el-sub-menu v-for="item in subMenuList" :key="item.path" :index="item.path">
-          <template #title>
-            <el-icon>{{ item.icon }}</el-icon>
-            <span>{{ item.name }}</span>
+      <div class="header-right">
+        <el-dropdown>
+          <span class="user-info">
+            <el-icon><User /></el-icon>
+            <span>{{ userStore.realName }}</span>
+            <span class="role-tag">{{ userStore.roleName() }}</span>
+            <el-icon class="arrow-icon"><ArrowDown /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="logout">
+                <el-icon><TurnOff /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
           </template>
-          <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
-            <span>{{ child.name }}</span>
+        </el-dropdown>
+      </div>
+    </header>
+    <aside class="layout-sidebar">
+      <el-menu
+        :default-active="activeMenu"
+        class="sidebar-menu"
+        router
+        :collapse="isCollapse"
+      >
+        <template v-for="item in menuList" :key="item.path">
+          <el-menu-item v-if="!item.children" :index="item.path" :disabled="!hasRole(item.roles)">
+            <component :is="item.icon" />
+            <template #title>{{ item.name }}</template>
           </el-menu-item>
-        </el-sub-menu>
+          <el-sub-menu v-else :index="item.path">
+            <template #title>
+              <component :is="item.icon" />
+              <span>{{ item.name }}</span>
+            </template>
+            <el-menu-item
+              v-for="child in item.children"
+              :key="child.path"
+              :index="child.path"
+              :disabled="!hasRole(child.roles)"
+            >
+              {{ child.name }}
+            </el-menu-item>
+          </el-sub-menu>
+        </template>
       </el-menu>
     </aside>
-    
-    <main class="main-content">
-      <header class="top-header">
-        <div class="header-left">
-          <h2>{{ currentPageName }}</h2>
-        </div>
-        <div class="header-right">
-          <div class="user-info">
-            <span>{{ realName }}</span>
-            <span class="role-tag">{{ roleName }}</span>
-          </div>
-          <el-button text @click="handleLogout">
-            <el-icon>TurnOff</el-icon>
-            <span>退出登录</span>
-          </el-button>
-        </div>
-      </header>
-      
-      <div class="content-wrapper">
-        <router-view />
-      </div>
+    <main class="layout-main">
+      <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useUserStore } from '@/store/user'
-import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '../store/user'
+import {
+  User,
+  ArrowDown,
+  TurnOff,
+  DataBoard,
+  Files,
+  FirstAidKit,
+  Calendar,
+  Reading,
+  WarningFilled,
+  SetUp
+} from '@element-plus/icons-vue'
 
-const router = useRouter()
-const route = useRoute()
 const userStore = useUserStore()
+const route = useRoute()
+const router = useRouter()
+const isCollapse = computed(() => false)
 
-const realName = computed(() => userStore.realName || localStorage.getItem('realName') || '')
-
-const roleMap = {
-  patient: '患者',
-  doctor: '医务人员',
-  follow: '随访人员',
-  admin: '管理员'
-}
-
-const roleName = computed(() => {
-  const role = userStore.role || localStorage.getItem('role') || ''
-  return roleMap[role] || ''
-})
+const menuList = [
+  { path: '/dashboard', name: '数据看板', icon: DataBoard, roles: ['patient', 'doctor', 'follow', 'admin'] },
+  { path: '/preConsult', name: '预问诊表单', icon: FirstAidKit, roles: ['patient'] },
+  {
+    path: '/case',
+    name: '病例管理',
+    icon: Files,
+    roles: ['doctor', 'admin'],
+    children: [
+      { path: '/caseList', name: '待审队列', roles: ['doctor', 'admin'] },
+      { path: '/caseDetail/:id', name: '病例详情', roles: ['doctor', 'admin'] }
+    ]
+  },
+  { path: '/followUp', name: '慢病随访管理', icon: Calendar, roles: ['follow', 'admin'] },
+  { path: '/guideSearch', name: '临床指南检索', icon: Reading, roles: ['doctor', 'follow', 'admin'] },
+  { path: '/monitor', name: '高风险监控面板', icon: WarningFilled, roles: ['admin', 'doctor'] },
+  { path: '/adminSetting', name: '系统配置管理', icon: SetUp, roles: ['admin'] }
+]
 
 const activeMenu = computed(() => {
   return route.path
 })
 
-const currentPageName = computed(() => {
-  const routeMap = {
-    '/dashboard': '数据看板',
-    '/preConsult': '预问诊表单',
-    '/caseList': '病例待审队列',
-    '/caseDetail': '病例详情',
-    '/followUp': '慢病随访管理',
-    '/guideSearch': '临床指南检索',
-    '/monitor': '高风险监控面板',
-    '/adminSetting': '系统配置管理'
-  }
-  return routeMap[route.path] || '数据看板'
-})
+const hasRole = (roles) => {
+  if (!roles) return true
+  return roles.includes(userStore.role)
+}
 
-const role = computed(() => userStore.role || localStorage.getItem('role') || '')
-
-const menuList = computed(() => {
-  const baseMenu = [
-    { path: '/dashboard', name: '数据看板', icon: 'DataBoard' }
-  ]
-  
-  const roleMenus = {
-    patient: [
-      { path: '/preConsult', name: '预问诊表单', icon: 'Plus' }
-    ],
-    doctor: [
-      { path: '/caseList', name: '待审队列', icon: 'List' },
-      { path: '/guideSearch', name: '指南检索', icon: 'Document' },
-      { path: '/monitor', name: '监控面板', icon: 'Warning' }
-    ],
-    follow: [
-      { path: '/followUp', name: '随访管理', icon: 'Calendar' },
-      { path: '/guideSearch', name: '指南检索', icon: 'Document' }
-    ],
-    admin: [
-      { path: '/caseList', name: '待审队列', icon: 'List' },
-      { path: '/followUp', name: '随访管理', icon: 'Calendar' },
-      { path: '/guideSearch', name: '指南检索', icon: 'Document' },
-      { path: '/monitor', name: '监控面板', icon: 'Warning' },
-      { path: '/adminSetting', name: '系统配置', icon: 'SetUp' }
-    ]
-  }
-  
-  return [...baseMenu, ...(roleMenus[role.value] || [])]
-})
-
-const subMenuList = computed(() => {
-  return []
-})
-
-const handleLogout = () => {
+const logout = () => {
   userStore.logout()
-  ElMessage.success('已退出登录')
   router.push('/login')
 }
 </script>
@@ -147,118 +129,130 @@ const handleLogout = () => {
   background: #f5f7fa;
 }
 
-.sidebar {
-  width: 220px;
-  background: #1a1a2e;
-  display: flex;
-  flex-direction: column;
+.layout-header {
   position: fixed;
-  left: 0;
   top: 0;
-  bottom: 0;
-  z-index: 100;
-
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-    .logo-icon {
-      color: #409eff;
-      margin-right: 10px;
-    }
-
-    .logo-text {
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-    }
-  }
-
-  .sidebar-menu {
-    flex: 1;
-    border-right: none;
-
-    :deep(.el-menu-item),
-    :deep(.el-sub-menu__title) {
-      height: 48px;
-      line-height: 48px;
-      margin: 4px 8px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-      }
-    }
-
-    :deep(.el-menu-item.is-active) {
-      background: #409eff !important;
-    }
-
-    :deep(.el-menu-item svg),
-    :deep(.el-sub-menu__title svg) {
-      font-size: 18px;
-    }
-  }
-}
-
-.main-content {
-  flex: 1;
-  margin-left: 220px;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.top-header {
-  background: #fff;
-  padding: 0 24px;
+  left: 200px;
+  right: 0;
   height: 60px;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  z-index: 100;
+}
 
-  .header-left h2 {
-    margin: 0;
-    font-size: 18px;
-    color: #303133;
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: background 0.2s;
+  color: #606266;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+}
+
+.role-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.arrow-icon {
+  font-size: 14px;
+}
+
+.layout-sidebar {
+  width: 200px;
+  height: 100vh;
+  background: #001529;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 101;
+}
+
+.sidebar-menu {
+  height: 100%;
+  border-right: none;
+  font-size: 14px;
+
+  :deep(.el-menu-item),
+  :deep(.el-sub-menu__title) {
+    height: 52px;
+    line-height: 52px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
   }
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+  :deep(.el-menu-item.is-active),
+  :deep(.el-sub-menu__title.is-active) {
+    background: #1890ff !important;
 
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    svg {
+      color: #fff !important;
+    }
+  }
 
-      span {
-        color: #606266;
-        font-size: 14px;
-      }
+  :deep(.el-menu-item svg),
+  :deep(.el-sub-menu__title svg) {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+  }
 
-      .role-tag {
-        padding: 2px 8px;
-        background: #ecf5ff;
-        color: #409eff;
-        border-radius: 4px;
-        font-size: 12px;
-      }
+  :deep(.el-sub-menu .el-menu-item) {
+    margin: 0;
+    padding-left: 48px !important;
+    border-radius: 0;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
     }
   }
 }
 
-.content-wrapper {
+.layout-main {
   flex: 1;
-  padding: 24px;
+  margin-left: 200px;
+  margin-top: 60px;
+  padding: 20px;
   overflow-y: auto;
 }
 </style>

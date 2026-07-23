@@ -1,12 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-
-const mockUsers = {
-  admin: { username: 'admin', password: 'admin123', role: 'admin', realName: '管理员' },
-  doctor: { username: 'doctor', password: 'doctor123', role: 'doctor', realName: '张医生' },
-  patient: { username: 'patient', password: 'patient123', role: 'patient', realName: '李患者' },
-  follow: { username: 'follow', password: 'follow123', role: 'follow', realName: '王随访' }
-}
+import { login, getUserInfo } from '../api'
+import { mockLogin, mockGetUserInfo } from '../api/mock'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -14,28 +9,57 @@ export const useUserStore = defineStore('user', () => {
   const role = ref(localStorage.getItem('role') || '')
   const realName = ref(localStorage.getItem('realName') || '')
 
-  const login = async (form) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const user = mockUsers[form.username]
-        if (user && user.password === form.password && user.role === form.role) {
-          const mockToken = 'Bearer ' + Math.random().toString(36).substring(2)
-          token.value = mockToken
-          username.value = user.username
-          role.value = user.role
-          realName.value = user.realName
-          
-          localStorage.setItem('token', mockToken)
-          localStorage.setItem('username', user.username)
-          localStorage.setItem('role', user.role)
-          localStorage.setItem('realName', user.realName)
-          
-          resolve({ success: true, message: '登录成功' })
-        } else {
-          resolve({ success: false, message: '用户名、密码或角色错误' })
-        }
-      }, 500)
-    })
+  const setToken = (newToken) => {
+    token.value = newToken
+    localStorage.setItem('token', newToken)
+  }
+
+  const loginAction = async (data) => {
+    try {
+      const res = await login(data)
+      if (res.data) {
+        setToken(res.data.token)
+        username.value = res.data.username
+        role.value = res.data.role
+        realName.value = res.data.realName || res.data.username
+        localStorage.setItem('username', res.data.username)
+        localStorage.setItem('role', res.data.role)
+        localStorage.setItem('realName', res.data.realName || res.data.username)
+      }
+      return res
+    } catch {
+      const res = await mockLogin(data)
+      if (res.data) {
+        setToken(res.data.token)
+        username.value = res.data.username
+        role.value = res.data.role
+        realName.value = res.data.realName || res.data.username
+        localStorage.setItem('username', res.data.username)
+        localStorage.setItem('role', res.data.role)
+        localStorage.setItem('realName', res.data.realName || res.data.username)
+      }
+      return res
+    }
+  }
+
+  const getUserInfoAction = async () => {
+    try {
+      const res = await getUserInfo()
+      if (res.data) {
+        username.value = res.data.username
+        role.value = res.data.role
+        realName.value = res.data.realName || res.data.username
+      }
+      return res
+    } catch {
+      const res = await mockGetUserInfo(token.value)
+      if (res.data) {
+        username.value = res.data.username
+        role.value = res.data.role
+        realName.value = res.data.realName || res.data.username
+      }
+      return res
+    }
   }
 
   const logout = () => {
@@ -43,15 +67,20 @@ export const useUserStore = defineStore('user', () => {
     username.value = ''
     role.value = ''
     realName.value = ''
-    
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     localStorage.removeItem('role')
     localStorage.removeItem('realName')
   }
 
-  const isAuthenticated = () => {
-    return !!token.value
+  const roleName = () => {
+    const names = {
+      patient: '患者',
+      doctor: '医务人员',
+      follow: '随访人员',
+      admin: '管理员'
+    }
+    return names[role.value] || role.value
   }
 
   return {
@@ -59,8 +88,10 @@ export const useUserStore = defineStore('user', () => {
     username,
     role,
     realName,
-    login,
+    setToken,
+    loginAction,
+    getUserInfoAction,
     logout,
-    isAuthenticated
+    roleName
   }
 })

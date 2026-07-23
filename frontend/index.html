@@ -1,101 +1,13 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '../store/user'
-
-// 布局容器
-const Layout = () => import('../components/Layout.vue')
-
-const routes = [
-  {
-    path: '/login',
-    name: '登录',
-    component: () => import('../观点/登录.vue'),
-    meta: { noAuth: true } // 无需登录
-  },
-  {
-    path: '/',
-    component: Layout,
-    redirect: '/dashboard',
-    children: [
-      {
-        path: 'dashboard',
-        name: '数据看板',
-        component: () => import('../观点/Dashboard.vue'),
-        meta: { roles: ['patient', 'doctor', 'follow', 'admin'] }
-      },
-      // 患者模拟用户页面
-      {
-        path: 'preConsult',
-        name: '预问诊表单',
-        component: () => import('../观点/预问诊/StepForm.vue'),
-        meta: { roles: ['patient'] }
-      },
-      // 医务人员页面
-      {
-        path: 'caseList',
-        name: '病例待审队列',
-        component: () => import('../观点/医师工作台/CaseList.vue'),
-        meta: { roles: ['doctor', 'admin'] }
-      },
-      {
-        path: 'caseDetail/:id',
-        name: '病例详情',
-        component: () => import('../观点/医师工作台/CaseDetail.vue'),
-        meta: { roles: ['doctor', 'admin'] }
-      },
-      // 随访人员页面
-      {
-        path: 'followUp',
-        name: '慢病随访管理',
-        component: () => import('../观点/随访管理/FollowUp.vue'),
-        meta: { roles: ['follow', 'admin'] }
-      },
-      // 指南检索
-      {
-        path: 'guideSearch',
-        name: '临床指南检索',
-        component: () => import('../观点/指南检索/GuideSearch.vue'),
-        meta: { roles: ['doctor', 'follow', 'admin'] }
-      },
-      // AI监控面板
-      {
-        path: 'monitor',
-        name: '高风险监控面板',
-        component: () => import('../观点/监控面板/Monitor.vue'),
-        meta: { roles: ['admin', 'doctor'] }
-      },
-      // 管理员配置
-      {
-        path: 'adminSetting',
-        name: '系统配置管理',
-        component: () => import('../观点/系统管理/AdminSetting.vue'),
-        meta: { roles: ['admin'] }
-      }
-    ]
-  }
-]
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-})
-
-// 路由守卫：登录校验 + 角色权限校验
-router.beforeEach((to, from, next) => {
-  const userStore = useUserStore()
-  const token = userStore.token
-  const userRole = userStore.role
-
-  // 免登录页面直接放行
-  if (to.meta.noAuth) return next()
-
-  // 无token跳登录
-  if (!token) return next('/login')
-
-  // 无角色权限拦截
-  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-    return next('/dashboard')
-  }
-  next()
-})
-
-export default router
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>基层医疗安全型预问诊与随访平台</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

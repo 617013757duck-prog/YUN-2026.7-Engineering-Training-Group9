@@ -1,23 +1,38 @@
-import request from '@/utils/request'
+import axios from 'axios'
 
-export const loginApi = (data) => {
-  return request({
-    url: '/api/auth/login',
-    method: 'post',
-    data
-  })
+const request = axios.create({
+  baseURL: '/api',
+  timeout: 10000
+})
+
+request.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  error => {
+    return Promise.reject(error)
+  }
+)
+
+request.interceptors.response.use(
+  response => {
+    return response
+  },
+  error => {
+    return Promise.reject(error)
+  }
+)
+
+export const login = (data) => {
+  return request.post('/login', data)
 }
 
-export const getUserInfoApi = () => {
-  return request({
-    url: '/api/auth/userInfo',
-    method: 'get'
-  })
+export const getUserInfo = () => {
+  return request.get('/user/info')
 }
 
-export const logoutApi = () => {
-  return request({
-    url: '/api/auth/logout',
-    method: 'post'
-  })
-}
+export default request

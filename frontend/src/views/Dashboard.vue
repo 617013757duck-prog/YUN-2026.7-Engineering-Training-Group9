@@ -1,334 +1,295 @@
 <template>
   <div class="dashboard">
-    <div class="welcome-section">
+    <div class="dashboard-header">
       <h2>数据看板</h2>
-      <p>欢迎回来，{{ realName }}！</p>
+      <p>欢迎回来，{{ realName }} | {{ roleText }}</p>
     </div>
     
-    <div class="stats-cards">
-      <el-card class="stat-card">
-        <div class="stat-content">
+    <el-row :gutter="20">
+      <el-col :span="6">
+        <el-card class="stat-card">
           <div class="stat-icon blue">
-            <el-icon size="32">TrendCharts</el-icon>
+            <el-icon><DataBoard /></el-icon>
           </div>
-          <div class="stat-info">
-            <p class="stat-value">{{ stats.todayConsult }}</p>
-            <p class="stat-label">今日问诊量</p>
+          <div class="stat-content">
+            <div class="stat-value">156</div>
+            <div class="stat-label">今日问诊量</div>
           </div>
-        </div>
-      </el-card>
-      
-      <el-card class="stat-card">
-        <div class="stat-content">
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="stat-card">
           <div class="stat-icon orange">
-            <el-icon size="32">List</el-icon>
+            <el-icon><Files /></el-icon>
           </div>
-          <div class="stat-info">
-            <p class="stat-value">{{ stats.pendingCase }}</p>
-            <p class="stat-label">待处理病例</p>
+          <div class="stat-content">
+            <div class="stat-value">23</div>
+            <div class="stat-label">待处理病例</div>
           </div>
-        </div>
-      </el-card>
-      
-      <el-card class="stat-card">
-        <div class="stat-content">
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="stat-card">
           <div class="stat-icon red">
-            <el-icon size="32">Warning</el-icon>
+            <el-icon><WarningFilled /></el-icon>
           </div>
-          <div class="stat-info">
-            <p class="stat-value">{{ stats.highRisk }}</p>
-            <p class="stat-label">高风险案例</p>
+          <div class="stat-content">
+            <div class="stat-value">8</div>
+            <div class="stat-label">高风险案例</div>
           </div>
-        </div>
-      </el-card>
-      
-      <el-card class="stat-card">
-        <div class="stat-content">
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="stat-card">
           <div class="stat-icon green">
-            <el-icon size="32">Calendar</el-icon>
+            <el-icon><Calendar /></el-icon>
           </div>
-          <div class="stat-info">
-            <p class="stat-value">{{ stats.followUpTask }}</p>
-            <p class="stat-label">随访任务数</p>
+          <div class="stat-content">
+            <div class="stat-value">45</div>
+            <div class="stat-label">随访任务数</div>
           </div>
-        </div>
-      </el-card>
-    </div>
-    
-    <div class="charts-section">
-      <el-card class="chart-card">
-        <h3>近7日问诊趋势</h3>
-        <div ref="trendChart" class="chart"></div>
-      </el-card>
-      
-      <el-card class="chart-card">
-        <h3>风险等级分布</h3>
-        <div ref="riskChart" class="chart"></div>
-      </el-card>
-    </div>
-    
-    <div class="bottom-section">
-      <el-card class="table-card">
-        <h3>待处理病例</h3>
-        <el-table :data="pendingCases" border style="width: 100%">
-          <el-table-column prop="id" label="病例编号" width="120" />
-          <el-table-column prop="patientName" label="患者姓名" width="100" />
-          <el-table-column prop="symptom" label="症状描述" />
-          <el-table-column prop="riskLevel" label="风险等级" width="100">
-            <template #default="scope">
-              <el-tag :type="getRiskType(scope.row.riskLevel)">{{ scope.row.riskLevel }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="submitTime" label="提交时间" width="160" />
-          <el-table-column label="操作" width="80">
-            <template #default="scope">
-              <el-button text size="small">详情</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
-      
-      <el-card class="table-card">
-        <h3>随访任务提醒</h3>
-        <el-table :data="followUpTasks" border style="width: 100%">
-          <el-table-column prop="id" label="任务编号" width="120" />
-          <el-table-column prop="patientName" label="患者姓名" width="100" />
-          <el-table-column prop="disease" label="慢病类型" width="120" />
-          <el-table-column prop="status" label="状态" width="100">
-            <template #default="scope">
-              <el-tag :type="getTaskType(scope.row.status)">{{ scope.row.status }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="dueTime" label="截止时间" width="160" />
-          <el-table-column label="操作" width="80">
-            <template #default="scope">
-              <el-button text size="small">完成</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
-    </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="20" style="margin-top: 20px;">
+      <el-col :span="14">
+        <el-card>
+          <template #header>
+            <h3>近7日问诊趋势</h3>
+          </template>
+          <div class="chart-placeholder">
+            <el-progress type="line" :percentage="65" :stroke-width="8" />
+            <p>图表区域（需集成 ECharts）</p>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="10">
+        <el-card>
+          <template #header>
+            <h3>风险等级分布</h3>
+          </template>
+          <div class="risk-distribution">
+            <div class="risk-item high">
+              <span class="risk-color"></span>
+              <span class="risk-text">高风险</span>
+              <span class="risk-count">12%</span>
+            </div>
+            <div class="risk-item medium">
+              <span class="risk-color"></span>
+              <span class="risk-text">中风险</span>
+              <span class="risk-count">28%</span>
+            </div>
+            <div class="risk-item low">
+              <span class="risk-color"></span>
+              <span class="risk-text">低风险</span>
+              <span class="risk-count">60%</span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="20" style="margin-top: 20px;">
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <h3>待处理病例</h3>
+            <el-button type="text" size="small">查看全部</el-button>
+          </template>
+          <el-table :data="caseList" stripe>
+            <el-table-column prop="id" label="编号" width="80" />
+            <el-table-column prop="patient" label="患者" />
+            <el-table-column prop="symptoms" label="症状" />
+            <el-table-column prop="time" label="提交时间" />
+            <el-table-column label="操作">
+              <template #default>
+                <el-button type="text" size="small">详情</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <h3>随访任务提醒</h3>
+            <el-button type="text" size="small">查看全部</el-button>
+          </template>
+          <el-table :data="followUpList" stripe>
+            <el-table-column prop="patient" label="患者" />
+            <el-table-column prop="type" label="随访类型" />
+            <el-table-column prop="deadline" label="截止时间" />
+            <el-table-column label="操作">
+              <template #default>
+                <el-button type="primary" size="small">完成</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useUserStore } from '@/store/user'
-import * as echarts from 'echarts'
+import { computed } from 'vue'
+import { DataBoard, Files, WarningFilled, Calendar } from '@element-plus/icons-vue'
 
-const userStore = useUserStore()
+const role = localStorage.getItem('role') || 'patient'
+const realName = localStorage.getItem('realName') || '用户'
 
-const realName = computed(() => userStore.realName || localStorage.getItem('realName') || '')
-
-const stats = ref({
-  todayConsult: 156,
-  pendingCase: 23,
-  highRisk: 8,
-  followUpTask: 45
+const roleText = computed(() => {
+  const map = {
+    patient: '患者',
+    doctor: '医务人员',
+    follow: '随访人员',
+    admin: '管理员'
+  }
+  return map[role] || '用户'
 })
 
-const pendingCases = ref([
-  { id: 'CASE001', patientName: '张三', symptom: '持续胸痛3天，伴有呼吸困难', riskLevel: '高', submitTime: '2026-07-23 09:30' },
-  { id: 'CASE002', patientName: '李四', symptom: '反复发热一周，体温最高39.5℃', riskLevel: '中', submitTime: '2026-07-23 08:15' },
-  { id: 'CASE003', patientName: '王五', symptom: '糖尿病患者，血糖控制不佳', riskLevel: '中', submitTime: '2026-07-23 07:45' },
-  { id: 'CASE004', patientName: '赵六', symptom: '高血压患者，血压波动明显', riskLevel: '低', submitTime: '2026-07-22 16:20' },
-  { id: 'CASE005', patientName: '钱七', symptom: '咳嗽咳痰两周，加重伴胸闷', riskLevel: '中', submitTime: '2026-07-22 14:30' }
-])
+const caseList = [
+  { id: 'C001', patient: '张三', symptoms: '发热、咳嗽', time: '10:30' },
+  { id: 'C002', patient: '李四', symptoms: '胸闷、气短', time: '09:15' },
+  { id: 'C003', patient: '王五', symptoms: '头痛、乏力', time: '08:45' },
+  { id: 'C004', patient: '赵六', symptoms: '腹痛、腹泻', time: '08:00' }
+]
 
-const followUpTasks = ref([
-  { id: 'TASK001', patientName: '张三', disease: '冠心病', status: '待随访', dueTime: '2026-07-24' },
-  { id: 'TASK002', patientName: '李四', disease: '糖尿病', status: '待随访', dueTime: '2026-07-25' },
-  { id: 'TASK003', patientName: '王五', disease: '高血压', status: '已完成', dueTime: '2026-07-22' },
-  { id: 'TASK004', patientName: '赵六', disease: '慢阻肺', status: '待随访', dueTime: '2026-07-26' },
-  { id: 'TASK005', patientName: '钱七', disease: '糖尿病', status: '进行中', dueTime: '2026-07-23' }
-])
-
-const trendChart = ref(null)
-const riskChart = ref(null)
-
-const getRiskType = (level) => {
-  const types = { '高': 'danger', '中': 'warning', '低': 'success' }
-  return types[level] || 'info'
-}
-
-const getTaskType = (status) => {
-  const types = { '待随访': 'warning', '进行中': 'primary', '已完成': 'success' }
-  return types[status] || 'info'
-}
-
-onMounted(() => {
-  initTrendChart()
-  initRiskChart()
-})
-
-const initTrendChart = () => {
-  const chart = echarts.init(trendChart.value)
-  chart.setOption({
-    tooltip: { trigger: 'axis' },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-    },
-    yAxis: { type: 'value' },
-    series: [{
-      name: '问诊量',
-      type: 'line',
-      smooth: true,
-      data: [120, 132, 101, 134, 190, 230, 156],
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-          { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
-        ])
-      },
-      lineStyle: { color: '#409eff', width: 3 },
-      itemStyle: { color: '#409eff' }
-    }]
-  })
-}
-
-const initRiskChart = () => {
-  const chart = echarts.init(riskChart.value)
-  chart.setOption({
-    tooltip: { trigger: 'item' },
-    legend: { bottom: 0 },
-    series: [{
-      name: '风险等级',
-      type: 'pie',
-      radius: ['40%', '70%'],
-      avoidLabelOverlap: false,
-      itemStyle: {
-        borderRadius: 10,
-        borderColor: '#fff',
-        borderWidth: 2
-      },
-      label: { show: false },
-      emphasis: {
-        label: { show: true, fontSize: 18, fontWeight: 'bold' }
-      },
-      data: [
-        { value: 8, name: '高风险', itemStyle: { color: '#f56c6c' } },
-        { value: 35, name: '中风险', itemStyle: { color: '#e6a23c' } },
-        { value: 57, name: '低风险', itemStyle: { color: '#67c23a' } }
-      ]
-    }]
-  })
-}
+const followUpList = [
+  { patient: '张三', type: '高血压随访', deadline: '今日' },
+  { patient: '李四', type: '糖尿病随访', deadline: '今日' },
+  { patient: '王五', type: '慢病复诊', deadline: '明日' },
+  { patient: '赵六', type: '术后随访', deadline: '3天后' }
+]
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .dashboard {
-  .welcome-section {
-    margin-bottom: 24px;
-    
-    h2 {
-      margin: 0 0 8px 0;
-      font-size: 24px;
-      color: #303133;
-    }
-    
-    p {
-      margin: 0;
-      color: #909399;
-    }
-  }
-  
-  .stats-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 24px;
-    
-    .stat-card {
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-      
-      .stat-content {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-      
-      .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        
-        &.blue { background: #ecf5ff; color: #409eff; }
-        &.orange { background: #fdf6ec; color: #e6a23c; }
-        &.red { background: #fef0f0; color: #f56c6c; }
-        &.green { background: #f0f9eb; color: #67c23a; }
-      }
-      
-      .stat-info {
-        .stat-value {
-          margin: 0;
-          font-size: 28px;
-          font-weight: 600;
-          color: #303133;
-        }
-        
-        .stat-label {
-          margin: 4px 0 0 0;
-          font-size: 14px;
-          color: #909399;
-        }
-      }
-    }
-  }
-  
-  .charts-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 24px;
-    
-    .chart-card {
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-      
-      h3 {
-        margin: 0 0 16px 0;
-        font-size: 16px;
-        color: #303133;
-      }
-      
-      .chart {
-        height: 280px;
-      }
-    }
-  }
-  
-  .bottom-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    
-    .table-card {
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-      
-      h3 {
-        margin: 0 0 16px 0;
-        font-size: 16px;
-        color: #303133;
-      }
-    }
-  }
+  padding: 20px;
 }
 
-@media (max-width: 1200px) {
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .charts-section,
-  .bottom-section {
-    grid-template-columns: 1fr;
-  }
+.dashboard-header {
+  margin-bottom: 20px;
+}
+
+.dashboard-header h2 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.dashboard-header p {
+  color: #909399;
+  margin-top: 5px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  margin-right: 20px;
+}
+
+.stat-icon.blue {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.stat-icon.orange {
+  background: #fff7e6;
+  color: #e6a23c;
+}
+
+.stat-icon.red {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.stat-icon.green {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-top: 5px;
+}
+
+.chart-placeholder {
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.chart-placeholder p {
+  margin-top: 15px;
+  color: #909399;
+}
+
+.risk-distribution {
+  padding: 10px;
+}
+
+.risk-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.risk-item:last-child {
+  border-bottom: none;
+}
+
+.risk-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.risk-item.high .risk-color {
+  background: #f56c6c;
+}
+
+.risk-item.medium .risk-color {
+  background: #e6a23c;
+}
+
+.risk-item.low .risk-color {
+  background: #67c23a;
+}
+
+.risk-text {
+  flex: 1;
+}
+
+.risk-count {
+  font-weight: bold;
 }
 </style>
