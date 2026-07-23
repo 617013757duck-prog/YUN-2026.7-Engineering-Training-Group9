@@ -32,6 +32,7 @@ public class VisitService {
     private final SymptomRepository symptomRepository;
     private final TriageResultRepository triageResultRepository;
     private final AIServiceClient aiServiceClient;
+    private final RuleService ruleService;
 
     @Transactional
     public Visit createVisit(VisitCreateRequest request) {
@@ -201,7 +202,7 @@ public class VisitService {
 
     /**
      * 执行AI分析
-     * 
+     *
      * @param id 就诊ID
      * @return 更新后的就诊记录
      */
@@ -211,24 +212,28 @@ public class VisitService {
         if (visit == null) {
             throw new BusinessException(404, "就诊记录不存在");
         }
-        
+
         // 检查状态是否允许AI分析
         VisitStatus currentStatus = VisitStatus.valueOf(visit.getStatus());
         if (!VisitStateMachine.canTransition(currentStatus, VisitStatus.AI_ANALYZED)) {
             throw new BusinessException(400, "当前状态不允许执行AI分析");
         }
-        
+
         // 获取症状列表
         List<Symptom> symptoms = symptomRepository.findByVisitId(id);
         if (symptoms.isEmpty()) {
             throw new BusinessException(400, "就诊记录没有症状信息");
         }
-        
+
+        // 1. 执行安全检查（红旗症状和禁忌条件检查）
+        log.info("开始安全检查: visitId={}", id);
+        RuleService.SafetyCheckResult safetyCheckResult = ruleService.performSafetyCheck(id);
+
         // 提取症状名称
         List<String> symptomNames = symptoms.stream()
             .map(Symptom::getSymptomName)
             .collect(Collectors.toList());
-        
+
         // 计算症状持续天数（简化处理）
         int durationDays = 1;
         if (symptoms.get(0).getDuration() != null) {
@@ -238,8 +243,8 @@ public class VisitService {
                 durationDays = 1;
             }
         }
-        
-        // 调用AI服务
+
+        // 2. 调用AI服务
         log.info("开始AI分析: visitId={}", id);
         AIAnalyzeResponse aiResponse = aiServiceClient.analyze(
             id,
@@ -248,24 +253,35 @@ public class VisitService {
             durationDays,
             visit.getChiefComplaint()
         );
-        
-        // 更新就诊记录
-        visit.setRiskLevel(aiResponse.getRiskLevel());
+
+        // 3. 更新就诊记录（优先使用规则引擎的风险等级）
+        String finalRiskLevel = aiResponse.getRiskLevel();
+        if (safetyCheckResult.isHasSafetyIssue()) {
+            // 如果安全检查发现高风险，提升风险等级
+            if ("高风险".equals(visit.getRiskLevel())) {
+                finalRiskLevel = "高风险";
+            } else if ("中风险".equals(visit.getRiskLevel()) && !"高风险".equals(aiResponse.getRiskLevel())) {
+                finalRiskLevel = "中风险";
+            }
+        }
+
+        visit.setRiskLevel(finalRiskLevel);
         visit.setAiAnalysis(aiResponse.getAnalysis());
         visit.setStatus(VisitStatus.AI_ANALYZED.name());
         visitRepository.updateById(visit);
-        
-        // 保存分诊结果
+
+        // 4. 保存分诊结果
         TriageResult triage = new TriageResult();
         triage.setVisitId(id);
-        triage.setRiskLevel(aiResponse.getRiskLevel());
+        triage.setRiskLevel(finalRiskLevel);
         triage.setRecommendations(String.join(";", aiResponse.getSuggestions()));
         triage.setAiModelVersion(aiResponse.getModelVersion());
         triage.setPromptVersion(aiResponse.getPromptVersion());
         triage.setKnowledgeBaseVersion(aiResponse.getKbVersion());
         triageResultRepository.insert(triage);
-        
-        log.info("AI分析完成: visitId={}, riskLevel={}", id, aiResponse.getRiskLevel());
+
+        log.info("AI分析完成: visitId={}, riskLevel={}, safetyCheck={}",
+            id, finalRiskLevel, safetyCheckResult.isHasSafetyIssue() ? "发现安全问题" : "正常");
         return visit;
     }
 
