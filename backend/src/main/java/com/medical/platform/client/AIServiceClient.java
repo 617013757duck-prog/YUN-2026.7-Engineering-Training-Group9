@@ -2,6 +2,8 @@ package com.medical.platform.client;
 
 import com.medical.platform.dto.AIAnalyzeRequest;
 import com.medical.platform.dto.AIAnalyzeResponse;
+import com.medical.platform.dto.LLMRequest;
+import com.medical.platform.dto.LLMResponse;
 import com.medical.platform.dto.RetrieveRequest;
 import com.medical.platform.dto.RetrieveResponse;
 import com.medical.platform.exception.BusinessException;
@@ -12,6 +14,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * AI服务HTTP客户端
@@ -130,6 +133,95 @@ public class AIServiceClient {
         } catch (Exception e) {
             log.warn("AI服务健康检查失败: {}", e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * 调用LLM推理接口
+     *
+     * @param promptTemplate Prompt模板名称
+     * @param variables 模板变量值
+     * @return LLM推理响应
+     */
+    public LLMResponse generateText(String promptTemplate, Map<String, Object> variables) {
+        return generateText(promptTemplate, variables, 2048, 0.1f, false);
+    }
+
+    /**
+     * 调用LLM推理接口（完整参数）
+     *
+     * @param promptTemplate Prompt模板名称
+     * @param variables 模板变量值
+     * @param maxTokens 最大生成token数
+     * @param temperature 温度参数
+     * @param stream 是否流式输出
+     * @return LLM推理响应
+     */
+    public LLMResponse generateText(String promptTemplate, Map<String, Object> variables,
+                                    Integer maxTokens, Float temperature, Boolean stream) {
+        LLMRequest request = LLMRequest.builder()
+                .promptTemplate(promptTemplate)
+                .variables(variables)
+                .maxTokens(maxTokens != null ? maxTokens : 2048)
+                .temperature(temperature != null ? temperature : 0.1f)
+                .stream(stream != null ? stream : false)
+                .build();
+
+        String url = aiServiceUrl + "/api/ai/generate";
+
+        try {
+            log.info("调用LLM推理服务: template={}, variablesCount={}",
+                    promptTemplate, variables != null ? variables.size() : 0);
+            LLMResponse response = restTemplate.postForObject(url, request, LLMResponse.class);
+
+            if (response == null || !response.getSuccess()) {
+                log.error("LLM推理失败: template={}", promptTemplate);
+                throw new BusinessException(500, "LLM推理失败");
+            }
+
+            log.info("LLM推理完成: template={}, model={}", promptTemplate, response.getModel());
+            return response;
+
+        } catch (RestClientException e) {
+            log.error("调用LLM推理服务失败: template={}, error={}", promptTemplate, e.getMessage(), e);
+            throw new BusinessException(503, "LLM推理服务暂时不可用: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("LLM推理未知错误: template={}", promptTemplate, e);
+            throw new BusinessException(500, "LLM推理失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取Prompt模板列表
+     *
+     * @return 模板列表响应
+     */
+    public String getTemplates() {
+        String url = aiServiceUrl + "/api/ai/templates";
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            log.debug("获取Prompt模板列表成功");
+            return response;
+        } catch (Exception e) {
+            log.warn("获取Prompt模板列表失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 获取模型信息
+     *
+     * @return 模型信息响应
+     */
+    public String getModelInfo() {
+        String url = aiServiceUrl + "/api/ai/model/info";
+        try {
+            String response = restTemplate.getForObject(url, String.class);
+            log.debug("获取模型信息成功");
+            return response;
+        } catch (Exception e) {
+            log.warn("获取模型信息失败: {}", e.getMessage());
+            return null;
         }
     }
 }
