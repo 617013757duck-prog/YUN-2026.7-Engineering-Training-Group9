@@ -1,18 +1,32 @@
 """
 医疗 AI 服务 - 主入口
 """
+# 必须在所有导入之前设置 HuggingFace 镜像（解决国内网络问题）
+import os
+from dotenv import load_dotenv
+load_dotenv()
+if os.getenv("HF_ENDPOINT"):
+    os.environ.setdefault("HF_ENDPOINT", os.getenv("HF_ENDPOINT"))
+
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from app.config import settings
-from app.api import analyze, health
+from app.core.logging_config import setup_logging
+from app.api import health, analyze
+from app.api.retrieve import router as retrieve_router
+from app.api.llm import router as llm_router
+
+# 初始化日志
+setup_logging()
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title=settings.SERVICE_NAME,
-    version=settings.SERVICE_VERSION,
-    description="基层医疗安全型预问诊与随访平台 - AI 服务"
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="基层医疗安全型预问诊与随访平台 - AI 服务",
 )
 
 # CORS 配置
@@ -25,16 +39,24 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(health.router, prefix="/api", tags=["健康检查"])
-app.include_router(analyze.router, prefix="/api/ai", tags=["AI 分析"])
+app.include_router(health.router, prefix="/api/ai", tags=["Health"])
+app.include_router(analyze.router, prefix="/api/ai", tags=["Analyze"])
+app.include_router(retrieve_router, prefix="/api/ai", tags=["Retrieve"])
+app.include_router(llm_router, prefix="/api/ai", tags=["LLM"])
 
 
 @app.on_event("startup")
 async def startup_event():
     """服务启动时执行"""
-    logger.info(f"AI 服务启动: {settings.SERVICE_NAME} v{settings.SERVICE_VERSION}")
-    logger.info(f"模型路径: {settings.MODEL_PATH}")
-    logger.info(f"向量数据库路径: {settings.VECTOR_DB_PATH}")
+    logger.info(f"AI 服务启动: {settings.APP_NAME} v{settings.APP_VERSION}")
+
+    # 初始化向量库
+    try:
+        from app.knowledge_base.vector_store import VectorStore
+        VectorStore.load_index()
+        logger.info("FAISS 向量库加载完成")
+    except Exception as e:
+        logger.warning(f"FAISS 向量库加载失败（首次启动可能索引不存在）: {e}")
 
 
 @app.on_event("shutdown")
@@ -44,10 +66,9 @@ async def shutdown_event():
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(
         "main:app",
-        host=settings.SERVICE_HOST,
-        port=settings.SERVICE_PORT,
-        reload=True
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=True,
     )

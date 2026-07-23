@@ -2,6 +2,8 @@ package com.medical.platform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.medical.platform.client.AIServiceClient;
+import com.medical.platform.dto.AIAnalyzeResponse;
 import com.medical.platform.dto.VisitCreateRequest;
 import com.medical.platform.dto.VisitVO;
 import com.medical.platform.entity.Symptom;
@@ -14,11 +16,14 @@ import com.medical.platform.repository.TriageResultRepository;
 import com.medical.platform.repository.VisitRepository;
 import com.medical.platform.state.VisitStateMachine;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VisitService {
@@ -26,6 +31,8 @@ public class VisitService {
     private final VisitRepository visitRepository;
     private final SymptomRepository symptomRepository;
     private final TriageResultRepository triageResultRepository;
+    private final AIServiceClient aiServiceClient;
+    private final RuleService ruleService;
 
     @Transactional
     public Visit createVisit(VisitCreateRequest request) {
@@ -191,5 +198,113 @@ public class VisitService {
         vo.setCreateTime(visit.getCreateTime());
         vo.setUpdateTime(visit.getUpdateTime());
         return vo;
+    }
+
+    /**
+     * 执行AI分析
+     *
+     * @param id 就诊ID
+     * @return 更新后的就诊记录
+     */
+    @Transactional
+    public Visit performAIAnalysis(Long id) {
+        Visit visit = visitRepository.selectById(id);
+        if (visit == null) {
+            throw new BusinessException(404, "就诊记录不存在");
+        }
+
+        // 检查状态是否允许AI分析
+        VisitStatus currentStatus = VisitStatus.valueOf(visit.getStatus());
+        if (!VisitStateMachine.canTransition(currentStatus, VisitStatus.AI_ANALYZED)) {
+            throw new BusinessException(400, "当前状态不允许执行AI分析");
+        }
+
+        // 获取症状列表
+        List<Symptom> symptoms = symptomRepository.findByVisitId(id);
+        if (symptoms.isEmpty()) {
+            throw new BusinessException(400, "就诊记录没有症状信息");
+        }
+
+        // 1. 执行安全检查（红旗症状和禁忌条件检查）
+        log.info("开始安全检查: visitId={}", id);
+        RuleService.SafetyCheckResult safetyCheckResult = ruleService.performSafetyCheck(id);
+
+        // 提取症状名称
+        List<String> symptomNames = symptoms.stream()
+            .map(Symptom::getSymptomName)
+            .collect(Collectors.toList());
+
+        // 计算症状持续天数（简化处理）
+        int durationDays = 1;
+        if (symptoms.get(0).getDuration() != null) {
+            try {
+                durationDays = Integer.parseInt(symptoms.get(0).getDuration().replaceAll("[^0-9]", ""));
+            } catch (NumberFormatException e) {
+                durationDays = 1;
+            }
+        }
+
+        // 2. 调用AI服务
+        log.info("开始AI分析: visitId={}", id);
+        AIAnalyzeResponse aiResponse = aiServiceClient.analyze(
+            id,
+            symptomNames,
+            visit.getAge(),
+            durationDays,
+            visit.getChiefComplaint()
+        );
+
+        // 3. 更新就诊记录（优先使用规则引擎的风险等级）
+        String finalRiskLevel = aiResponse.getRiskLevel();
+        if (safetyCheckResult.isHasSafetyIssue()) {
+            // 如果安全检查发现高风险，提升风险等级
+            if ("高风险".equals(visit.getRiskLevel())) {
+                finalRiskLevel = "高风险";
+            } else if ("中风险".equals(visit.getRiskLevel()) && !"高风险".equals(aiResponse.getRiskLevel())) {
+                finalRiskLevel = "中风险";
+            }
+        }
+
+        visit.setRiskLevel(finalRiskLevel);
+        visit.setAiAnalysis(aiResponse.getAnalysis());
+        visit.setStatus(VisitStatus.AI_ANALYZED.name());
+        visitRepository.updateById(visit);
+
+        // 4. 保存分诊结果
+        TriageResult triage = new TriageResult();
+        triage.setVisitId(id);
+        triage.setRiskLevel(finalRiskLevel);
+        triage.setRecommendations(String.join(";", aiResponse.getSuggestions()));
+        triage.setAiModelVersion(aiResponse.getModelVersion());
+        triage.setPromptVersion(aiResponse.getPromptVersion());
+        triage.setKnowledgeBaseVersion(aiResponse.getKbVersion());
+        triageResultRepository.insert(triage);
+
+        log.info("AI分析完成: visitId={}, riskLevel={}, safetyCheck={}",
+            id, finalRiskLevel, safetyCheckResult.isHasSafetyIssue() ? "发现安全问题" : "正常");
+        return visit;
+    }
+
+    /**
+     * 提交就诊记录进行AI分析（自动触发）
+     * 
+     * @param id 就诊ID
+     * @return 就诊记录
+     */
+    @Transactional
+    public Visit submitForAnalysis(Long id) {
+        Visit visit = visitRepository.selectById(id);
+        if (visit == null) {
+            throw new BusinessException(404, "就诊记录不存在");
+        }
+        
+        // 更新状态为预筛查完成
+        VisitStatus currentStatus = VisitStatus.valueOf(visit.getStatus());
+        if (currentStatus == VisitStatus.PENDING) {
+            visit.setStatus(VisitStatus.PRE_SCREENED.name());
+            visitRepository.updateById(visit);
+        }
+        
+        return visit;
     }
 }

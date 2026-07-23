@@ -75,4 +75,19 @@ public class VisitController {
         visitService.deleteVisit(id);
         return Result.success("就诊记录删除成功");
     }
+
+    @PostMapping("/{id}/analyze")
+    @Operation(summary = "执行AI分析")
+    @PreAuthorize("hasAnyRole('MEDICAL_STAFF', 'ADMIN')")
+    public Result<Visit> performAIAnalysis(@PathVariable Long id) {
+        Visit visit = visitService.performAIAnalysis(id);
+        return Result.success("AI分析完成", visit);
+    }
+
+    @PostMapping("/{id}/submit")
+    @Operation(summary = "提交就诊记录进行AI分析")
+    public Result<Visit> submitForAnalysis(@PathVariable Long id) {
+        Visit visit = visitService.submitForAnalysis(id);
+        return Result.success("已提交进行AI分析", visit);
+    }
 }
