@@ -2,7 +2,7 @@
 医疗指南文档切分器
 """
 from typing import List, Dict
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class GuidelineSplitter:
