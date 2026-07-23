@@ -7,7 +7,16 @@ from typing import List, Optional
 from app.knowledge_base.retriever import MedicalRetriever
 
 router = APIRouter()
-retriever = MedicalRetriever()
+# 延迟初始化，避免启动时立即下载模型
+_retriever = None
+
+
+def get_retriever():
+    """获取检索器实例（延迟初始化）"""
+    global _retriever
+    if _retriever is None:
+        _retriever = MedicalRetriever()
+    return _retriever
 
 
 class RetrieveRequest(BaseModel):
@@ -36,6 +45,7 @@ class RetrieveResponse(BaseModel):
 async def retrieve_knowledge(req: RetrieveRequest):
     """RAG 知识检索接口"""
     try:
+        retriever = get_retriever()
         results = retriever.retrieve(
             query=req.query,
             visit_id=req.visit_id,
