@@ -2,6 +2,8 @@ package com.medical.platform.client;
 
 import com.medical.platform.dto.AIAnalyzeRequest;
 import com.medical.platform.dto.AIAnalyzeResponse;
+import com.medical.platform.dto.RetrieveRequest;
+import com.medical.platform.dto.RetrieveResponse;
 import com.medical.platform.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -73,6 +75,43 @@ public class AIServiceClient {
         } catch (Exception e) {
             log.error("AI分析未知错误: visitId={}", visitId, e);
             throw new BusinessException(500, "AI分析失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 调用RAG检索接口
+     *
+     * @param query 查询文本
+     * @param visitId 就诊ID
+     * @param topK 返回结果数量
+     * @return RAG检索响应
+     */
+    public RetrieveResponse retrieve(String query, Long visitId, Integer topK) {
+        RetrieveRequest request = new RetrieveRequest();
+        request.setQuery(query);
+        request.setVisitId(visitId);
+        request.setTopK(topK != null ? topK : 5);
+
+        String url = aiServiceUrl + "/api/ai/retrieve";
+
+        try {
+            log.info("调用RAG检索服务: visitId={}, queryLength={}", visitId, query.length());
+            RetrieveResponse response = restTemplate.postForObject(url, request, RetrieveResponse.class);
+
+            if (response == null || !response.getSuccess()) {
+                log.error("RAG检索失败: visitId={}", visitId);
+                throw new BusinessException(500, "RAG检索失败");
+            }
+
+            log.info("RAG检索完成: visitId={}, totalResults={}", visitId, response.getTotal());
+            return response;
+
+        } catch (RestClientException e) {
+            log.error("调用RAG检索服务失败: visitId={}, error={}", visitId, e.getMessage(), e);
+            throw new BusinessException(503, "RAG检索服务暂时不可用: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("RAG检索未知错误: visitId={}", visitId, e);
+            throw new BusinessException(500, "RAG检索失败: " + e.getMessage());
         }
     }
 
