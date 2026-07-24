@@ -151,8 +151,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { InfoFilled, User, Document, Calendar, SetUp, Lock, ArrowRight, Key, Phone } from '@element-plus/icons-vue'
+import { useUserStore } from '../store/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const rememberMe = ref(false)
 const showForgotDialog = ref(false)
@@ -213,17 +215,24 @@ const handleLogin = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (!valid) return
-    
+
     loading.value = true
     await new Promise(resolve => setTimeout(resolve, 800))
-    
+
     const user = demoAccounts.find(a => a.username === loginForm.username)
     if (user && user.password === loginForm.password && user.role === loginForm.role) {
+      // 更新localStorage
       localStorage.setItem('token', 'mock-token-' + user.role)
       localStorage.setItem('username', user.name)
       localStorage.setItem('role', user.role)
       localStorage.setItem('realName', user.name)
-      
+
+      // 同步更新userStore的响应式状态，修复退出后重新登录侧边栏卡死的bug
+      userStore.token = 'mock-token-' + user.role
+      userStore.username = user.name
+      userStore.role = user.role
+      userStore.realName = user.name
+
       if (rememberMe.value) {
         localStorage.setItem('rememberMe', 'true')
         localStorage.setItem('savedUsername', loginForm.username)
@@ -235,7 +244,7 @@ const handleLogin = async () => {
         localStorage.removeItem('savedPassword')
         localStorage.removeItem('savedRole')
       }
-      
+
       ElMessage.success('登录成功')
       router.push('/dashboard')
     } else {
