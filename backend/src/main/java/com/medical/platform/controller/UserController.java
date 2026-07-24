@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -21,6 +23,24 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     
     private final UserService userService;
+    
+    /**
+     * 获取当前登录用户信息（前端兼容接口）
+     * 前端调用：GET /api/user/info
+     */
+    @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
+    @GetMapping("/info")
+    public Result<UserVO> getCurrentUserInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Result.error(401, "未登录");
+        }
+        
+        // 从认证信息中获取用户ID
+        String username = authentication.getName();
+        UserVO userVO = userService.getUserVOByUsername(username);
+        return Result.success(userVO);
+    }
     
     @Operation(summary = "用户注册", description = "注册新用户")
     @PostMapping("/register")

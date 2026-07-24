@@ -189,6 +189,17 @@ public class UserService {
     }
     
     /**
+     * 根据用户名获取用户VO（用于前端接口）
+     */
+    public UserVO getUserVOByUsername(String username) {
+        User user = getUserByUsername(username);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND.getCode(), "用户不存在");
+        }
+        return convertToVO(user);
+    }
+    
+    /**
      * 转换为 VO
      */
     private UserVO convertToVO(User user) {
