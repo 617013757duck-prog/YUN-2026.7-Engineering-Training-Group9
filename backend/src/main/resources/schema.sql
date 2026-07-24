@@ -186,5 +186,25 @@ INSERT INTO medical_guidelines (title, category, content, source, version, statu
 ('心血管风险评估', '心血管系统', '心血管疾病的危险因素和预防措施...', '心血管学会', 'v1.0', 1)
 ON DUPLICATE KEY UPDATE title=title;
 
+-- Agent运行记录表
+CREATE TABLE IF NOT EXISTS agent_runs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '运行记录ID',
+    visit_id BIGINT NOT NULL COMMENT '就诊ID',
+    agent_type VARCHAR(50) NOT NULL COMMENT 'Agent类型（RISK_CHECK、SAFETY_CHECK、AI_ANALYZE等）',
+    model_version VARCHAR(50) COMMENT '模型版本',
+    prompt_version VARCHAR(50) COMMENT 'Prompt版本',
+    knowledge_base_version VARCHAR(50) COMMENT '知识库版本',
+    input_data TEXT COMMENT '输入数据（JSON）',
+    output_data TEXT COMMENT '输出数据（JSON）',
+    execution_time_ms INT COMMENT '执行时间（毫秒）',
+    status VARCHAR(20) NOT NULL COMMENT '执行状态（SUCCESS、FAILED）',
+    error_message TEXT COMMENT '错误信息',
+    triggered_by BIGINT COMMENT '触发用户ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_visit_id (visit_id),
+    INDEX idx_agent_type (agent_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Agent运行记录表';
+
 -- 完成
 SELECT '数据库初始化完成！' AS message;

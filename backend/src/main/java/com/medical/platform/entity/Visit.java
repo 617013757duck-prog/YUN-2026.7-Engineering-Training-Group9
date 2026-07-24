@@ -1,6 +1,7 @@
 package com.medical.platform.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.medical.platform.annotation.SensitiveField;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -15,8 +16,10 @@ public class Visit {
 
     private String patientName;
 
+    @SensitiveField(type = SensitiveField.SensitiveType.PHONE)
     private String patientPhone;
 
+    @SensitiveField(type = SensitiveField.SensitiveType.ID_CARD)
     private String patientIdCard;
 
     private Integer age;
