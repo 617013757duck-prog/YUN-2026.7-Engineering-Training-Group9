@@ -1,13 +1,36 @@
 <template>
   <div class="dashboard page-container">
+    <!-- 页面背景装饰 -->
+    <div class="page-bg-decor">
+      <div class="bg-circle bg-circle-1"></div>
+      <div class="bg-circle bg-circle-2"></div>
+    </div>
+
     <div class="dashboard-header">
       <div class="header-left">
-        <h1>数据看板</h1>
-        <p>欢迎回来，{{ realName }} | {{ roleText }}</p>
+        <div class="header-title-row">
+          <h1>数据看板</h1>
+          <span class="header-divider"></span>
+          <span class="header-subtitle">{{ roleText }}视角</span>
+        </div>
+        <p class="header-welcome">
+          <span class="welcome-dot"></span>
+          欢迎回来，{{ realName }}
+        </p>
       </div>
       <div class="header-actions">
-        <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" size="small" />
-        <el-button type="primary" size="small" @click="refreshData">
+        <div class="date-picker-wrapper">
+          <el-icon class="picker-icon"><Calendar /></el-icon>
+          <el-date-picker 
+            v-model="dateRange" 
+            type="daterange" 
+            range-separator="至" 
+            start-placeholder="开始" 
+            end-placeholder="结束" 
+            size="small" 
+          />
+        </div>
+        <el-button type="primary" size="small" @click="refreshData" round>
           <el-icon><Refresh /></el-icon>
           刷新数据
         </el-button>
@@ -15,70 +38,90 @@
     </div>
     
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-icon blue">
+      <div class="stat-card" @click="handleStatClick('consult')">
+        <div class="stat-icon-wrap blue-bg">
           <el-icon><DataBoard /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.consultCount }}</div>
           <div class="stat-label">今日问诊量</div>
+          <div class="stat-value">{{ stats.consultCount }}</div>
           <div class="stat-trend" :class="stats.consultTrend > 0 ? 'positive' : 'negative'">
-            <el-icon><ArrowUp v-if="stats.consultTrend > 0" /><ArrowDown v-else /></el-icon>
-            {{ Math.abs(stats.consultTrend) }}%
+            <el-icon :size="12"><ArrowUp v-if="stats.consultTrend > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(stats.consultTrend) }}% 较昨日
           </div>
         </div>
+        <div class="stat-decor-circle blue-circle"></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon orange">
+      <div class="stat-card" @click="handleStatClick('cases')">
+        <div class="stat-icon-wrap amber-bg">
           <el-icon><Files /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.pendingCases }}</div>
           <div class="stat-label">待处理病例</div>
+          <div class="stat-value">{{ stats.pendingCases }}</div>
           <div class="stat-trend" :class="stats.pendingTrend > 0 ? 'positive' : 'negative'">
-            <el-icon><ArrowUp v-if="stats.pendingTrend > 0" /><ArrowDown v-else /></el-icon>
-            {{ Math.abs(stats.pendingTrend) }}%
+            <el-icon :size="12"><ArrowUp v-if="stats.pendingTrend > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(stats.pendingTrend) }}% 较昨日
           </div>
         </div>
+        <div class="stat-decor-circle amber-circle"></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon red">
+      <div class="stat-card" @click="handleStatClick('risk')">
+        <div class="stat-icon-wrap rose-bg">
           <el-icon><WarningFilled /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.highRiskCases }}</div>
           <div class="stat-label">高风险案例</div>
+          <div class="stat-value">{{ stats.highRiskCases }}</div>
           <div class="stat-trend" :class="stats.riskTrend > 0 ? 'positive' : 'negative'">
-            <el-icon><ArrowUp v-if="stats.riskTrend > 0" /><ArrowDown v-else /></el-icon>
-            {{ Math.abs(stats.riskTrend) }}%
+            <el-icon :size="12"><ArrowUp v-if="stats.riskTrend > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(stats.riskTrend) }}% 较昨日
           </div>
         </div>
+        <div class="stat-decor-circle rose-circle"></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon green">
+      <div class="stat-card" @click="handleStatClick('followUp')">
+        <div class="stat-icon-wrap emerald-bg">
           <el-icon><Calendar /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.followUpTasks }}</div>
           <div class="stat-label">随访任务数</div>
+          <div class="stat-value">{{ stats.followUpTasks }}</div>
           <div class="stat-trend" :class="stats.followUpTrend > 0 ? 'positive' : 'negative'">
-            <el-icon><ArrowUp v-if="stats.followUpTrend > 0" /><ArrowDown v-else /></el-icon>
-            {{ Math.abs(stats.followUpTrend) }}%
+            <el-icon :size="12"><ArrowUp v-if="stats.followUpTrend > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(stats.followUpTrend) }}% 较昨日
           </div>
         </div>
+        <div class="stat-decor-circle emerald-circle"></div>
       </div>
     </div>
 
     <div class="content-row">
       <div class="glass-card chart-card">
         <div class="card-header">
-          <h3>近7日问诊趋势</h3>
+          <div class="card-title-group">
+            <span class="card-title-icon chart-icon">
+              <el-icon><TrendCharts /></el-icon>
+            </span>
+            <h3>近7日问诊趋势</h3>
+          </div>
+          <div class="card-actions">
+            <span class="period-label">近7天</span>
+          </div>
         </div>
         <div ref="trendChart" class="chart-container"></div>
       </div>
       <div class="glass-card chart-card">
         <div class="card-header">
-          <h3>风险等级分布</h3>
+          <div class="card-title-group">
+            <span class="card-title-icon risk-icon">
+              <el-icon><PieChart /></el-icon>
+            </span>
+            <h3>风险等级分布</h3>
+          </div>
+          <div class="card-actions">
+            <span class="period-label">当前</span>
+          </div>
         </div>
         <div ref="riskChart" class="chart-container"></div>
       </div>
@@ -87,29 +130,35 @@
     <div class="content-row">
       <div class="glass-card list-card">
         <div class="card-header">
-          <h3>待处理病例</h3>
+          <div class="card-title-group">
+            <span class="card-title-icon case-icon">
+              <el-icon><Document /></el-icon>
+            </span>
+            <h3>待处理病例</h3>
+            <span class="badge-count">{{ caseTotal }}</span>
+          </div>
           <div class="card-actions">
-            <el-button type="text" size="small" @click="viewAllCases">查看全部</el-button>
-            <el-select v-model="caseFilter" size="small" style="width: 120px">
+            <el-select v-model="caseFilter" size="small" style="width: 110px" placeholder="筛选风险">
               <el-option label="全部" value="" />
               <el-option label="高风险" value="high" />
               <el-option label="中风险" value="medium" />
               <el-option label="低风险" value="low" />
             </el-select>
+            <el-button type="text" size="small" @click="viewAllCases">查看全部 →</el-button>
           </div>
         </div>
-        <div v-loading="loadingCases">
-          <el-table :data="filteredCases" stripe>
+        <div v-loading="loadingCases" class="table-wrapper">
+          <el-table :data="filteredCases" :header-cell-style="tableHeaderStyle">
             <el-table-column prop="id" label="编号" width="80" />
             <el-table-column prop="patient" label="患者" />
-            <el-table-column prop="symptoms" label="症状" />
+            <el-table-column prop="symptoms" label="症状" show-overflow-tooltip />
             <el-table-column prop="riskLevel" label="风险等级" width="100">
               <template #default="{ row }">
-                <el-tag :type="getRiskTagType(row.riskLevel)" size="small">{{ row.riskLevel }}</el-tag>
+                <el-tag :type="getRiskTagType(row.riskLevel)" size="small" effect="light" round>{{ row.riskLevel }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="time" label="提交时间" />
-            <el-table-column label="操作" width="80">
+            <el-table-column prop="time" label="提交时间" width="90" />
+            <el-table-column label="操作" width="70" align="center">
               <template #default="{ row }">
                 <el-button type="text" size="small" @click="viewCase(row.id)">详情</el-button>
               </template>
@@ -133,36 +182,42 @@
       </div>
       <div class="glass-card list-card">
         <div class="card-header">
-          <h3>随访任务提醒</h3>
+          <div class="card-title-group">
+            <span class="card-title-icon followup-icon">
+              <el-icon><List /></el-icon>
+            </span>
+            <h3>随访任务提醒</h3>
+            <span class="badge-count">{{ followUpTotal }}</span>
+          </div>
           <div class="card-actions">
-            <el-button type="text" size="small" @click="viewAllFollowUp">查看全部</el-button>
-            <el-select v-model="followUpFilter" size="small" style="width: 120px">
+            <el-select v-model="followUpFilter" size="small" style="width: 110px" placeholder="筛选时间">
               <el-option label="全部" value="" />
               <el-option label="今日" value="today" />
               <el-option label="即将到期" value="upcoming" />
               <el-option label="已逾期" value="overdue" />
             </el-select>
+            <el-button type="text" size="small" @click="viewAllFollowUp">查看全部 →</el-button>
           </div>
         </div>
-        <div v-loading="loadingFollowUp">
-          <el-table :data="filteredFollowUp" stripe>
+        <div v-loading="loadingFollowUp" class="table-wrapper">
+          <el-table :data="filteredFollowUp" :header-cell-style="tableHeaderStyle">
             <el-table-column prop="patient" label="患者" />
             <el-table-column prop="type" label="随访类型" />
             <el-table-column prop="deadline" label="截止时间" width="100">
               <template #default="{ row }">
-                <span :class="getDeadlineClass(row.deadline)">{{ row.deadline }}</span>
+                <span :class="getDeadlineClass(row.deadline)" class="deadline-text">{{ row.deadline }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
-                <el-tag :type="row.status === 'completed' ? 'success' : 'warning'" size="small">
+                <el-tag :type="row.status === 'completed' ? 'success' : 'warning'" size="small" effect="light" round>
                   {{ row.status === 'completed' ? '已完成' : '待执行' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="80">
+            <el-table-column label="操作" width="70" align="center">
               <template #default="{ row }">
-                <el-button v-if="row.status !== 'completed'" type="primary" size="small" @click="completeTask(row)">完成</el-button>
+                <el-button v-if="row.status !== 'completed'" type="primary" size="small" round @click="completeTask(row)">完成</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -190,7 +245,11 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { DataBoard, Files, WarningFilled, Calendar, Refresh, ArrowUp, ArrowDown, Document } from '@element-plus/icons-vue'
+import { 
+  DataBoard, Files, WarningFilled, Calendar, Refresh, 
+  ArrowUp, ArrowDown, Document, ArrowRight, 
+  TrendCharts, PieChart, List 
+} from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const router = useRouter()
@@ -214,6 +273,13 @@ const roleText = computed(() => {
   const map = { patient: '患者', doctor: '医务人员', follow: '随访人员', admin: '管理员' }
   return map[role] || '用户'
 })
+
+const tableHeaderStyle = {
+  background: '#fafbfc',
+  color: '#4a4a68',
+  fontWeight: '600',
+  fontSize: '13px'
+}
 
 const stats = reactive({
   consultCount: 156,
@@ -290,6 +356,23 @@ const viewAllCases = () => router.push('/caseList')
 const viewCase = (id) => router.push(`/caseDetail/${id}`)
 const viewAllFollowUp = () => router.push('/followUp')
 
+const handleStatClick = (type) => {
+  switch (type) {
+    case 'consult':
+      router.push('/preConsult')
+      break
+    case 'cases':
+      router.push('/caseList')
+      break
+    case 'risk':
+      router.push('/monitor')
+      break
+    case 'followUp':
+      router.push('/followUp')
+      break
+  }
+}
+
 const completeTask = (row) => {
   row.status = 'completed'
   ElMessage.success(`已完成${row.patient}的随访任务`)
@@ -317,38 +400,45 @@ const initTrendChart = () => {
     backgroundColor: 'transparent',
     tooltip: { 
       trigger: 'axis',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: 'rgba(64, 158, 255, 0.2)',
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      borderColor: 'rgba(64, 158, 255, 0.15)',
       borderWidth: 1,
-      textStyle: { color: '#1a1a2e' },
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+      textStyle: { color: '#1a1a2e', fontSize: 13 },
+      extraCssText: 'box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); border-radius: 8px;'
     },
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: { 
       type: 'category', 
       data: days, 
-      axisLine: { lineStyle: { color: 'rgba(0, 0, 0, 0.08)' } },
+      axisLine: { show: false },
       axisLabel: { color: '#8e8ea9', fontSize: 12 },
       axisTick: { show: false }
     },
     yAxis: { 
       type: 'value', 
-      axisLine: { lineStyle: { color: 'rgba(0, 0, 0, 0.08)' } },
+      axisLine: { show: false },
       axisLabel: { color: '#8e8ea9', fontSize: 12 },
-      splitLine: { lineStyle: { color: 'rgba(0, 0, 0, 0.04)' } }
+      splitLine: { lineStyle: { color: 'rgba(0, 0, 0, 0.04)', type: 'dashed' } }
     },
     series: [{
       name: '问诊量',
       type: 'line',
       smooth: true,
       data: [120, 135, 118, 145, 132, 156, stats.consultCount],
-      itemStyle: { color: '#409eff' },
-      lineStyle: { width: 3, color: '#409eff' },
+      itemStyle: { 
+        color: '#409eff',
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      lineStyle: { width: 3, color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+        { offset: 0, color: '#409eff' },
+        { offset: 1, color: '#66b1ff' }
+      ])},
       symbol: 'circle',
-      symbolSize: 6,
+      symbolSize: 8,
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+          { offset: 0, color: 'rgba(64, 158, 255, 0.25)' },
           { offset: 1, color: 'rgba(64, 158, 255, 0.02)' }
         ])
       },
@@ -356,9 +446,9 @@ const initTrendChart = () => {
         itemStyle: {
           color: '#409eff',
           borderColor: '#fff',
-          borderWidth: 2,
+          borderWidth: 3,
           shadowColor: 'rgba(64, 158, 255, 0.4)',
-          shadowBlur: 10
+          shadowBlur: 12
         }
       }
     }]
@@ -373,11 +463,11 @@ const initRiskChart = () => {
     tooltip: { 
       trigger: 'item', 
       formatter: '{b}: {c} ({d}%)',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: 'rgba(64, 158, 255, 0.2)',
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      borderColor: 'rgba(64, 158, 255, 0.15)',
       borderWidth: 1,
-      textStyle: { color: '#1a1a2e' },
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+      textStyle: { color: '#1a1a2e', fontSize: 13 },
+      extraCssText: 'box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); border-radius: 8px;'
     },
     legend: { 
       orient: 'vertical', 
@@ -385,11 +475,12 @@ const initRiskChart = () => {
       top: 'center',
       textStyle: { color: '#4a4a68', fontSize: 13 },
       itemWidth: 12,
-      itemHeight: 12
+      itemHeight: 12,
+      itemGap: 16
     },
     series: [{
       type: 'pie',
-      radius: ['45%', '75%'],
+      radius: ['48%', '78%'],
       center: ['35%', '50%'],
       avoidLabelOverlap: false,
       label: { show: false },
@@ -397,17 +488,21 @@ const initRiskChart = () => {
       emphasis: {
         label: { show: true, fontSize: 16, fontWeight: '600', color: '#1a1a2e' },
         scale: true,
-        scaleSize: 10
+        scaleSize: 8,
+        itemStyle: {
+          shadowColor: 'rgba(0, 0, 0, 0.15)',
+          shadowBlur: 10
+        }
       },
       data: [
-        { value: 12, name: '高风险', itemStyle: { color: '#f56c6c' } },
-        { value: 28, name: '中风险', itemStyle: { color: '#e6a23c' } },
-        { value: 60, name: '低风险', itemStyle: { color: '#67c23a' } }
+        { value: 12, name: '高风险', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#f56c6c' }, { offset: 1, color: '#f78989' }]) } },
+        { value: 28, name: '中风险', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#e6a23c' }, { offset: 1, color: '#ebb563' }]) } },
+        { value: 60, name: '低风险', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#67c23a' }, { offset: 1, color: '#85ce61' }]) } }
       ],
       itemStyle: {
-        borderRadius: 4,
+        borderRadius: 6,
         borderColor: '#fff',
-        borderWidth: 2
+        borderWidth: 3
       }
     }]
   })
@@ -438,10 +533,48 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// ============ 页面背景装饰 ============
+.page-bg-decor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+
+  .bg-circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+  }
+
+  .bg-circle-1 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(64, 158, 255, 0.15) 0%, transparent 70%);
+    top: -100px;
+    right: -50px;
+  }
+
+  .bg-circle-2 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(103, 194, 58, 0.1) 0%, transparent 70%);
+    bottom: -50px;
+    left: -50px;
+  }
+}
+
 .dashboard {
+  position: relative;
+  z-index: 1;
   padding-bottom: 20px;
 }
 
+// ============ 页面头部 ============
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -449,145 +582,215 @@ onUnmounted(() => {
   margin-bottom: 24px;
 
   .header-left {
-    h1 {
-      font-size: 24px;
-      font-weight: 600;
-      color: #1a1a2e;
+    .header-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       margin-bottom: 8px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #409eff 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+
+      h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0;
+        background: linear-gradient(135deg, #1a1a2e 0%, #409eff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .header-divider {
+        width: 1px;
+        height: 18px;
+        background: #d9d9e3;
+      }
+
+      .header-subtitle {
+        font-size: 13px;
+        color: #8e8ea9;
+        font-weight: 500;
+      }
     }
 
-    p {
-      font-size: 14px;
+    .header-welcome {
+      font-size: 13px;
       color: #8e8ea9;
       display: flex;
       align-items: center;
       gap: 8px;
+      margin: 0;
 
-      &::before {
-        content: '';
-        width: 4px;
-        height: 4px;
+      .welcome-dot {
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background: #409eff;
+        background: #67c23a;
+        box-shadow: 0 0 6px rgba(103, 194, 58, 0.4);
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    .date-picker-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .picker-icon {
+        color: #8e8ea9;
+        font-size: 16px;
       }
     }
   }
 }
 
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
+// ============ 统计卡片 ============
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.25s ease;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, rgba(64, 158, 255, 0.3), transparent);
-    opacity: 0;
-    transition: opacity 0.25s;
-  }
+  cursor: pointer;
 
   &:hover {
-    transform: translateY(-3px) scale(1.01);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04), 0 12px 28px rgba(0, 0, 0, 0.08);
+    border-color: rgba(255, 255, 255, 1);
+  }
 
-    &::before {
-      opacity: 1;
+  .stat-decor-circle {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.06;
+    top: -20px;
+    right: -20px;
+    transition: opacity 0.3s;
+
+    .stat-card:hover & {
+      opacity: 0.1;
     }
 
-    .stat-icon {
-      transform: scale(1.1);
-    }
+    &.blue-circle { background: #409eff; }
+    &.amber-circle { background: #e6a23c; }
+    &.rose-circle { background: #f56c6c; }
+    &.emerald-circle { background: #67c23a; }
   }
 }
 
-.stat-icon {
-  width: 56px;
-  height: 56px;
+.stat-icon-wrap {
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 22px;
   color: #fff;
-  transition: transform 0.25s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  transition: transform 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 
-  &.blue { background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%); }
-  &.orange { background: linear-gradient(135deg, #e6a23c 0%, #ebb563 100%); }
-  &.red { background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%); }
-  &.green { background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%); }
+  .stat-card:hover & {
+    transform: scale(1.08) rotate(-3deg);
+  }
+
+  &.blue-bg { 
+    background: linear-gradient(135deg, #409eff 0%, #79bbff 100%);
+    box-shadow: 0 4px 14px rgba(64, 158, 255, 0.3);
+  }
+  &.amber-bg { 
+    background: linear-gradient(135deg, #e6a23c 0%, #f0c78a 100%);
+    box-shadow: 0 4px 14px rgba(230, 162, 60, 0.3);
+  }
+  &.rose-bg { 
+    background: linear-gradient(135deg, #f56c6c 0%, #f89898 100%);
+    box-shadow: 0 4px 14px rgba(245, 108, 108, 0.3);
+  }
+  &.emerald-bg { 
+    background: linear-gradient(135deg, #67c23a 0%, #95d475 100%);
+    box-shadow: 0 4px 14px rgba(103, 194, 58, 0.3);
+  }
 }
 
 .stat-info {
   flex: 1;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 4px;
-  line-height: 1.2;
+  min-width: 0;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #8e8ea9;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.2;
   margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-trend {
   font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   font-weight: 500;
+  opacity: 0.85;
 
   &.positive { color: #67c23a; }
   &.negative { color: #f56c6c; }
 }
 
+// ============ 内容区域 ============
 .content-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.3s;
+
+  &:hover {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+}
+
 .chart-card {
-  padding: 24px;
+  padding: 20px;
 
   .chart-container {
     height: 280px;
@@ -598,31 +801,91 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 
-  h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a1a2e;
-    margin: 0;
+  .card-title-group {
     display: flex;
     align-items: center;
     gap: 8px;
 
-    &::before {
-      content: '';
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: #409eff;
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin: 0;
     }
+  }
+
+  .card-title-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+    flex-shrink: 0;
+
+    &.chart-icon {
+      background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+    }
+    &.risk-icon {
+      background: linear-gradient(135deg, #e6a23c 0%, #ebb563 100%);
+    }
+    &.case-icon {
+      background: linear-gradient(135deg, #409eff 0%, #79bbff 100%);
+    }
+    &.followup-icon {
+      background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+    }
+  }
+
+  .badge-count {
+    background: rgba(64, 158, 255, 0.1);
+    color: #409eff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .period-label {
+    font-size: 12px;
+    color: #8e8ea9;
+    background: #f5f7fa;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 500;
   }
 }
 
 .card-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+}
+
+.list-card {
+  padding: 20px;
+
+  .table-wrapper {
+    :deep(.el-table) {
+      --el-table-border-color: rgba(0, 0, 0, 0.04);
+      
+      th.el-table__cell {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+      }
+
+      td.el-table__cell {
+        border-bottom-color: rgba(0, 0, 0, 0.03) !important;
+      }
+
+      .el-table__row:hover > td.el-table__cell {
+        background: rgba(64, 158, 255, 0.04) !important;
+      }
+    }
+  }
 }
 
 .card-footer {
@@ -633,16 +896,45 @@ onUnmounted(() => {
   border-top: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.deadline-today {
-  color: #e6a23c;
-  font-weight: 500;
+.deadline-text {
+  &.deadline-today {
+    color: #e6a23c;
+    font-weight: 600;
+  }
+
+  &.deadline-overdue {
+    color: #f56c6c;
+    font-weight: 600;
+    position: relative;
+
+    &::before {
+      content: '⚠';
+      margin-right: 4px;
+      font-size: 12px;
+    }
+  }
 }
 
-.deadline-overdue {
-  color: #f56c6c;
-  font-weight: 500;
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  gap: 12px;
+
+  .empty-icon {
+    font-size: 40px;
+    color: #d9d9e3;
+  }
+
+  .empty-text {
+    font-size: 14px;
+    color: #8e8ea9;
+  }
 }
 
+// ============ 响应式 ============
 @media (max-width: 992px) {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);

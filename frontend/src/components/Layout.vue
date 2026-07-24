@@ -459,6 +459,7 @@ onUnmounted(() => {
   flex-direction: column;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
 
+  // ============ 收起状态（核心修复） ============
   &.is-collapsed {
     width: 64px;
 
@@ -472,40 +473,126 @@ onUnmounted(() => {
 
     .sidebar-logo {
       justify-content: center;
-      padding: 20px 0;
+      padding: 16px 0;
       border-bottom-width: 0;
     }
 
     .sidebar-logo-icon {
       margin-right: 0;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
     }
 
+    // 菜单项：完全居中，清除所有偏移因素
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
-      justify-content: center;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      height: 52px !important;
+      line-height: 52px !important;
+      margin: 0 !important;
       padding-left: 0 !important;
       padding-right: 0 !important;
       border-left: none !important;
+      border-radius: 0 !important;
+      width: 100% !important;
+      min-width: 64px !important;
+      text-align: center !important;
     }
 
+    // 强制子菜单标题内的内容完全居中
+    :deep(.el-sub-menu__title) > * {
+      flex-shrink: 0 !important;
+    }
+
+    // 图标容器：取消 margin，确保居中，微调向右偏移
+    :deep(.el-menu-item .menu-icon-wrapper),
+    :deep(.el-sub-menu__title .menu-icon-wrapper) {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+      width: 36px !important;
+      height: 36px !important;
+      margin-left: -8px !important;
+    }
+
+    // 隐藏文字
+    :deep(.el-menu-item .menu-text),
+    :deep(.el-sub-menu__title .menu-text) {
+      display: none !important;
+    }
+
+    // 隐藏箭头
+    :deep(.el-sub-menu__title .el-sub-menu__icon-arrow) {
+      display: none !important;
+    }
+
+    // 隐藏子菜单指示器
+    :deep(.el-menu-item .sub-menu-indicator) {
+      display: none !important;
+    }
+
+    // 收起时子菜单项也居中
     :deep(.el-sub-menu .el-menu-item) {
-      margin: 0 12px !important;
-      padding-left: 0 !important;
-      justify-content: center;
+      margin: 0 !important;
+      padding: 0 !important;
+      justify-content: center !important;
+      align-items: center !important;
+      height: 52px !important;
+      line-height: 52px !important;
+      width: 100%;
+      border-radius: 0 !important;
+      border-left: none !important;
     }
 
-    .menu-icon-wrapper {
-      margin-right: 0;
+    // 收起时隐藏徽章
+    :deep(.el-menu-item .menu-badge),
+    :deep(.el-sub-menu__title .menu-badge) {
+      display: none !important;
     }
 
-    .menu-text {
-      display: none;
+    // 强制 el-sub-menu__title 在收起时完全居中
+    :deep(.el-sub-menu__title) {
+      position: relative !important;
+
+      .el-sub-menu__icon-arrow {
+        display: none !important;
+        position: absolute !important;
+        right: 0 !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+      }
     }
 
-    .sub-menu-indicator {
-      display: none;
+    // 确保 el-sub-menu 容器不影响布局
+    :deep(.el-sub-menu) {
+      width: 100% !important;
+    }
+
+    // 收起状态选中态：整行背景，不要左侧边框
+    :deep(.el-menu-item.is-active),
+    :deep(.el-sub-menu__title.is-active),
+    :deep(.el-sub-menu .el-menu-item.is-active) {
+      background: rgba(64, 158, 255, 0.15) !important;
+      border-left: none !important;
+    }
+
+    // Tooltip 弹出层里的文字
+    :deep(.el-popper) {
+      .el-menu-item {
+        padding: 0 20px !important;
+        justify-content: flex-start !important;
+      }
+      .menu-text {
+        display: inline !important;
+      }
+      .menu-icon-wrapper {
+        margin-right: 10px !important;
+      }
+    }
+
+    .sidebar-menu-container {
+      padding-top: 4px;
     }
   }
 
@@ -594,11 +681,12 @@ onUnmounted(() => {
     font-size: 14px;
     background: transparent !important;
 
+    // ============ 菜单项通用样式 ============
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
       height: 46px;
       line-height: 46px;
-      margin: 0 12px;
+      margin: 2px 10px;
       border-radius: 8px;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
@@ -612,6 +700,7 @@ onUnmounted(() => {
       }
     }
 
+    // ============ 选中态 ============
     :deep(.el-menu-item.is-active),
     :deep(.el-sub-menu__title.is-active) {
       background: rgba(64, 158, 255, 0.08) !important;
@@ -632,6 +721,7 @@ onUnmounted(() => {
       }
     }
 
+    // ============ 图标容器 ============
     .menu-icon-wrapper {
       width: 34px;
       height: 34px;
@@ -645,6 +735,7 @@ onUnmounted(() => {
       flex-shrink: 0;
     }
 
+    // ============ 图标颜色 ============
     :deep(.el-menu-item svg),
     :deep(.el-sub-menu__title svg) {
       font-size: 19px;
@@ -657,6 +748,7 @@ onUnmounted(() => {
       color: rgba(255, 255, 255, 0.9);
     }
 
+    // ============ 菜单文字 ============
     .menu-text {
       font-size: 14px;
       color: rgba(255, 255, 255, 0.75);
@@ -673,9 +765,10 @@ onUnmounted(() => {
       color: rgba(255, 255, 255, 0.9);
     }
 
+    // ============ 徽标 ============
     .menu-badge {
       margin-left: 6px;
-      margin-right: 8px;
+      margin-right: 28px;
       background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
       color: #fff;
       font-size: 10px;
@@ -692,16 +785,18 @@ onUnmounted(() => {
       animation: pulseBadge 2s ease-in-out infinite;
     }
 
+    // ============ 分割线 ============
     .menu-divider {
       height: 1px;
       background: rgba(255, 255, 255, 0.06);
       margin: 8px 12px;
     }
 
+    // ============ 子菜单项 ============
     :deep(.el-sub-menu .el-menu-item) {
       height: 40px;
       line-height: 40px;
-      margin: 0 12px 0 36px;
+      margin: 0 10px 0 36px;
       padding-left: 20px !important;
       padding-right: 10px !important;
       border-radius: 6px;
@@ -825,6 +920,7 @@ onUnmounted(() => {
   transform: translateY(-10px);
 }
 
+// ============ 响应式适配 ============
 @media (max-width: 768px) {
   .layout-header {
     left: 0;
