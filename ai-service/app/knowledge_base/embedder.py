@@ -4,6 +4,16 @@ BGE 文本向量化器
 import os
 import numpy as np
 from typing import List
+
+# 必须在 SentenceTransformer 导入前设置 HuggingFace 镜像
+from dotenv import load_dotenv
+load_dotenv()
+_hf = os.getenv("HF_ENDPOINT")
+if _hf:
+    os.environ["HF_ENDPOINT"] = _hf
+# 强制离线模式（模型已缓存，跳过网络检查 BE adapter_config.json）
+os.environ["HF_HUB_OFFLINE"] = "1"
+
 from sentence_transformers import SentenceTransformer
 from app.config import settings
 
@@ -12,15 +22,10 @@ class BGEEmbedder:
     """BGE 文本向量化器"""
 
     def __init__(self):
-        # 设置 HuggingFace 镜像（解决国内网络问题）
-        from dotenv import load_dotenv
-        load_dotenv()
-        if os.getenv("HF_ENDPOINT"):
-            os.environ.setdefault("HF_ENDPOINT", os.getenv("HF_ENDPOINT"))
-
         self.model = SentenceTransformer(
             settings.EMBEDDING_MODEL_PATH,
             device=settings.EMBEDDING_DEVICE,
+            local_files_only=True,  # 强制离线，模型已下载到本地缓存
         )
         self.dimension = self.model.get_sentence_embedding_dimension()
 
