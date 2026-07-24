@@ -1,10 +1,4 @@
--- 医疗平台数据库初始化脚本
--- 创建时间：2026-07-24
--- 创建者：贺孟缘
-
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS medical_platform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
+-- 医疗平台数据库初始化脚本（简化版）
 USE medical_platform;
 
 -- 用户表
@@ -173,18 +167,5 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     INDEX idx_visit_id (visit_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审计日志表';
 
--- 插入默认管理员账号（密码：admin123，需要使用BCrypt加密）
--- 注意：实际密码哈希值应该由应用程序生成，这里只是一个示例
--- INSERT INTO users (username, password, real_name, role, status) VALUES
--- ('admin', '$2a$10$YourBCryptHashHere', '管理员', 'ADMIN', 1)
--- ON DUPLICATE KEY UPDATE username='admin';
-
--- 插入示例医疗指南数据
-INSERT INTO medical_guidelines (title, category, content, source, version, status) VALUES
-('头痛诊断指南', '神经系统', '头痛诊断的标准流程和注意事项...', '国家卫健委', 'v1.0', 1),
-('发热症状处理', '常见症状', '发热患者的处理流程和用药建议...', '临床指南', 'v1.0', 1),
-('心血管风险评估', '心血管系统', '心血管疾病的危险因素和预防措施...', '心血管学会', 'v1.0', 1)
-ON DUPLICATE KEY UPDATE title=title;
-
 -- 完成
-SELECT '数据库初始化完成！' AS message;
+SELECT 'Database initialization completed!' AS message;
