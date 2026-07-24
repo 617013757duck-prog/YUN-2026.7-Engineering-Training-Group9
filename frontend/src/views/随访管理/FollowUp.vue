@@ -1,5 +1,5 @@
 <template>
-  <div class="follow-up-container">
+  <div class="follow-up-container page-container">
     <div class="page-header">
       <div class="header-left">
         <h1>慢病随访管理</h1>
@@ -20,6 +20,10 @@
         <div class="stat-info">
           <p class="stat-value">{{ stats.pending }}</p>
           <p class="stat-label">待执行任务</p>
+          <p class="stat-trend">
+            <el-icon><ArrowUp v-if="trends.pending > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(trends.pending) }}% 较上周
+          </p>
         </div>
       </div>
       <div class="stat-card">
@@ -29,6 +33,10 @@
         <div class="stat-info">
           <p class="stat-value">{{ stats.completed }}</p>
           <p class="stat-label">已完成任务</p>
+          <p class="stat-trend">
+            <el-icon><ArrowUp v-if="trends.completed > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(trends.completed) }}% 较上周
+          </p>
         </div>
       </div>
       <div class="stat-card">
@@ -38,6 +46,10 @@
         <div class="stat-info">
           <p class="stat-value">{{ stats.overdue }}</p>
           <p class="stat-label">已逾期任务</p>
+          <p class="stat-trend">
+            <el-icon><ArrowUp v-if="trends.overdue > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(trends.overdue) }}% 较上周
+          </p>
         </div>
       </div>
       <div class="stat-card">
@@ -47,16 +59,46 @@
         <div class="stat-info">
           <p class="stat-value">{{ stats.plans }}</p>
           <p class="stat-label">随访计划数</p>
+          <p class="stat-trend">
+            <el-icon><ArrowUp v-if="trends.plans > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(trends.plans) }}% 较上周
+          </p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon patient">
+          <el-icon><User /></el-icon>
+        </div>
+        <div class="stat-info">
+          <p class="stat-value">{{ stats.patients }}</p>
+          <p class="stat-label">管理患者数</p>
+          <p class="stat-trend">
+            <el-icon><ArrowUp v-if="trends.patients > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(trends.patients) }}% 较上周
+          </p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rate">
+          <el-icon><TrendCharts /></el-icon>
+        </div>
+        <div class="stat-info">
+          <p class="stat-value">{{ stats.completionRate }}%</p>
+          <p class="stat-label">任务完成率</p>
+          <p class="stat-trend">
+            <el-icon><ArrowUp v-if="trends.completionRate > 0" /><ArrowDown v-else /></el-icon>
+            {{ Math.abs(trends.completionRate) }}% 较上周
+          </p>
         </div>
       </div>
     </div>
     <div class="tabs-container">
-      <el-tabs v-model="activeTab">
+      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
         <el-tab-pane label="随访任务" name="tasks">
           <div class="filter-bar">
             <el-form :model="taskFilters" inline>
               <el-form-item label="状态">
-                <el-select v-model="taskFilters.status" placeholder="全部">
+                <el-select v-model="taskFilters.status" placeholder="全部" clearable>
                   <el-option label="全部" value="" />
                   <el-option label="待执行" value="pending" />
                   <el-option label="已完成" value="completed" />
@@ -73,7 +115,7 @@
             </el-form>
           </div>
           <div class="table-card">
-            <el-table :data="taskList" border v-loading="loading">
+            <el-table :data="filteredTaskList" border v-loading="taskLoading">
               <el-table-column prop="id" label="任务编号" width="140" />
               <el-table-column prop="patientName" label="患者姓名" width="100" />
               <el-table-column prop="planName" label="随访计划" />
@@ -92,11 +134,22 @@
               <el-table-column label="操作" width="180">
                 <template #default="{ row }">
                   <el-button type="primary" size="small" @click="viewTask(row)">详情</el-button>
-                  <el-button v-if="row.status === 'pending'" type="success" size="small" @click="completeTask(row.id)">完成</el-button>
+                  <el-button v-if="row.status === 'pending'" type="success" size="small" @click="completeTask(row)">完成</el-button>
                   <el-button type="warning" size="small" @click="editTask(row)">编辑</el-button>
                 </template>
               </el-table-column>
             </el-table>
+            <div class="pagination-bar">
+              <el-pagination
+                @size-change="handleTaskSizeChange"
+                @current-change="handleTaskCurrentChange"
+                :current-page="taskPagination.page"
+                :page-sizes="[10, 20, 50]"
+                :page-size="taskPagination.size"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="taskPagination.total"
+              />
+            </div>
           </div>
         </el-tab-pane>
         <el-tab-pane label="随访计划" name="plans">
@@ -106,7 +159,7 @@
                 <el-input v-model="planFilters.name" placeholder="请输入计划名称" clearable />
               </el-form-item>
               <el-form-item label="计划类型">
-                <el-select v-model="planFilters.type" placeholder="全部">
+                <el-select v-model="planFilters.type" placeholder="全部" clearable>
                   <el-option label="全部" value="" />
                   <el-option label="高血压" value="hypertension" />
                   <el-option label="糖尿病" value="diabetes" />
@@ -121,7 +174,7 @@
             </el-form>
           </div>
           <div class="table-card">
-            <el-table :data="planList" border v-loading="loading">
+            <el-table :data="filteredPlanList" border v-loading="planLoading">
               <el-table-column prop="id" label="计划编号" width="140" />
               <el-table-column prop="name" label="计划名称" />
               <el-table-column prop="type" label="计划类型" width="100">
@@ -140,6 +193,64 @@
                 </template>
               </el-table-column>
             </el-table>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="日历视图" name="calendar">
+          <div class="calendar-card">
+            <div class="calendar-header">
+              <el-button @click="prevMonth">
+                <el-icon><ArrowLeft /></el-icon>
+              </el-button>
+              <span class="calendar-title">{{ currentYear }}年{{ currentMonth }}月</span>
+              <el-button @click="nextMonth">
+                <el-icon><ArrowRight /></el-icon>
+              </el-button>
+              <el-button @click="goToday" type="text">今天</el-button>
+            </div>
+            <div class="calendar-body">
+              <div class="calendar-weekdays">
+                <div v-for="day in weekdays" :key="day" class="weekday">{{ day }}</div>
+              </div>
+              <div class="calendar-days">
+                <div
+                  v-for="(day, index) in calendarDays"
+                  :key="index"
+                  class="calendar-day"
+                  :class="{
+                    'other-month': !day.currentMonth,
+                    'today': day.isToday,
+                    'has-task': day.taskCount > 0,
+                    'selected': isSelectedDate(day)
+                  }"
+                  @click="selectDate(day)"
+                >
+                  <span class="day-number">{{ day.date }}</span>
+                  <span v-if="day.taskCount > 0" class="task-dot"></span>
+                </div>
+              </div>
+            </div>
+            <div v-if="selectedDate" class="calendar-detail">
+              <h3>{{ selectedDate.year }}年{{ selectedDate.month }}月{{ selectedDate.date }}日</h3>
+              <div v-if="selectedDayTasks.length === 0" class="empty-state">
+                <el-icon><Calendar /></el-icon>
+                <p>当天没有随访任务</p>
+              </div>
+              <div v-else class="task-list">
+                <div
+                  v-for="task in selectedDayTasks"
+                  :key="task.id"
+                  class="task-item"
+                  :class="task.status"
+                >
+                  <div class="task-time">{{ formatTime(task.nextTime) }}</div>
+                  <div class="task-info">
+                    <span class="task-patient">{{ task.patientName }}</span>
+                    <span class="task-plan">{{ task.planName }}</span>
+                  </div>
+                  <el-tag :type="getStatusTagType(task.status)" size="small">{{ getStatusLabel(task.status) }}</el-tag>
+                </div>
+              </div>
+            </div>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -188,12 +299,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Clock, CircleCheckFilled, Warning, Calendar } from '@element-plus/icons-vue'
+import { Plus, Clock, CircleCheckFilled, Warning, Calendar, User, TrendCharts, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 
 const activeTab = ref('tasks')
-const loading = ref(false)
+const taskLoading = ref(false)
+const planLoading = ref(false)
 const showCreateDialog = ref(false)
 const createFormRef = ref(null)
 
@@ -201,11 +313,28 @@ const stats = reactive({
   pending: 23,
   completed: 156,
   overdue: 5,
-  plans: 12
+  plans: 12,
+  patients: 256,
+  completionRate: 87
+})
+
+const trends = reactive({
+  pending: -12,
+  completed: 8,
+  overdue: -5,
+  plans: 5,
+  patients: 3,
+  completionRate: 2
 })
 
 const taskFilters = reactive({ status: '', patientName: '' })
 const planFilters = reactive({ name: '', type: '' })
+
+const taskPagination = reactive({
+  page: 1,
+  size: 10,
+  total: 6
+})
 
 const taskList = [
   { id: 'FU-20260722001', patientName: '张三', planName: '高血压随访计划', planType: 'hypertension', status: 'pending', nextTime: '2026-07-23 09:00', lastTime: '2026-06-23 09:00' },
@@ -238,6 +367,148 @@ const createRules = {
   duration: [{ required: true, message: '请选择计划时长', trigger: 'change' }]
 }
 
+const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+const currentDate = new Date()
+const currentYear = ref(currentDate.getFullYear())
+const currentMonth = ref(currentDate.getMonth() + 1)
+const selectedDate = ref(null)
+
+const filteredTaskList = computed(() => {
+  let list = taskList.filter(item => {
+    if (taskFilters.status && item.status !== taskFilters.status) return false
+    if (taskFilters.patientName && !item.patientName.includes(taskFilters.patientName)) return false
+    return true
+  })
+  taskPagination.total = list.length
+  const start = (taskPagination.page - 1) * taskPagination.size
+  return list.slice(start, start + taskPagination.size)
+})
+
+const filteredPlanList = computed(() => {
+  return planList.filter(item => {
+    if (planFilters.name && !item.name.includes(planFilters.name)) return false
+    if (planFilters.type && item.type !== planFilters.type) return false
+    return true
+  })
+})
+
+const calendarDays = computed(() => {
+  const days = []
+  const firstDay = new Date(currentYear.value, currentMonth.value - 1, 1)
+  const lastDay = new Date(currentYear.value, currentMonth.value, 0)
+  const today = new Date()
+  
+  const startDay = firstDay.getDay()
+  const prevMonthLastDay = new Date(currentYear.value, currentMonth.value - 1, 0).getDate()
+  
+  for (let i = startDay - 1; i >= 0; i--) {
+    const date = prevMonthLastDay - i
+    const month = currentMonth.value - 1 || 12
+    const year = currentMonth.value === 1 ? currentYear.value - 1 : currentYear.value
+    days.push({
+      date,
+      month,
+      year,
+      currentMonth: false,
+      isToday: false,
+      taskCount: getTaskCountForDate(year, month, date)
+    })
+  }
+  
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    const isToday = today.getFullYear() === currentYear.value &&
+                   today.getMonth() + 1 === currentMonth.value &&
+                   today.getDate() === i
+    days.push({
+      date: i,
+      month: currentMonth.value,
+      year: currentYear.value,
+      currentMonth: true,
+      isToday,
+      taskCount: getTaskCountForDate(currentYear.value, currentMonth.value, i)
+    })
+  }
+  
+  const remainingDays = 42 - days.length
+  for (let i = 1; i <= remainingDays; i++) {
+    const month = currentMonth.value + 1 > 12 ? 1 : currentMonth.value + 1
+    const year = currentMonth.value === 12 ? currentYear.value + 1 : currentYear.value
+    days.push({
+      date: i,
+      month,
+      year,
+      currentMonth: false,
+      isToday: false,
+      taskCount: getTaskCountForDate(year, month, i)
+    })
+  }
+  
+  return days
+})
+
+const selectedDayTasks = computed(() => {
+  if (!selectedDate.value) return []
+  return taskList.filter(task => {
+    const taskDate = new Date(task.nextTime)
+    return taskDate.getFullYear() === selectedDate.value.year &&
+           taskDate.getMonth() + 1 === selectedDate.value.month &&
+           taskDate.getDate() === selectedDate.value.date
+  })
+})
+
+const getTaskCountForDate = (year, month, date) => {
+  return taskList.filter(task => {
+    const taskDate = new Date(task.nextTime)
+    return taskDate.getFullYear() === year &&
+           taskDate.getMonth() + 1 === month &&
+           taskDate.getDate() === date
+  }).length
+}
+
+const isSelectedDate = (day) => {
+  if (!selectedDate.value) return false
+  return selectedDate.value.year === day.year &&
+         selectedDate.value.month === day.month &&
+         selectedDate.value.date === day.date
+}
+
+const selectDate = (day) => {
+  selectedDate.value = { year: day.year, month: day.month, date: day.date }
+}
+
+const prevMonth = () => {
+  if (currentMonth.value === 1) {
+    currentMonth.value = 12
+    currentYear.value--
+  } else {
+    currentMonth.value--
+  }
+}
+
+const nextMonth = () => {
+  if (currentMonth.value === 12) {
+    currentMonth.value = 1
+    currentYear.value++
+  } else {
+    currentMonth.value++
+  }
+}
+
+const goToday = () => {
+  const today = new Date()
+  currentYear.value = today.getFullYear()
+  currentMonth.value = today.getMonth() + 1
+  selectedDate.value = {
+    year: today.getFullYear(),
+    month: today.getMonth() + 1,
+    date: today.getDate()
+  }
+}
+
+const formatTime = (datetime) => {
+  return datetime.split(' ')[1] || ''
+}
+
 const getPlanTypeLabel = (type) => {
   const labels = { hypertension: '高血压', diabetes: '糖尿病', chd: '冠心病', copd: '慢阻肺', other: '其他' }
   return labels[type] || type
@@ -253,12 +524,15 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const completeTask = async (id) => {
-  const task = taskList.find(t => t.id === id)
-  if (task) {
-    task.status = 'completed'
-    ElMessage.success('任务已完成')
-  }
+const handleTabChange = (tabName) => {
+  activeTab.value = tabName
+}
+
+const completeTask = async (row) => {
+  row.status = 'completed'
+  stats.pending--
+  stats.completed++
+  ElMessage.success('任务已完成')
 }
 
 const viewTask = (row) => {
@@ -277,16 +551,37 @@ const editPlan = (row) => {
   ElMessage.info(`编辑计划: ${row.id}`)
 }
 
-const searchTasks = () => {}
-const resetTaskFilters = () => { taskFilters.status = ''; taskFilters.patientName = '' }
+const searchTasks = () => {
+  taskPagination.page = 1
+}
+
+const resetTaskFilters = () => {
+  taskFilters.status = ''
+  taskFilters.patientName = ''
+  taskPagination.page = 1
+}
+
 const searchPlans = () => {}
-const resetPlanFilters = () => { planFilters.name = ''; planFilters.type = '' }
+
+const resetPlanFilters = () => {
+  planFilters.name = ''
+  planFilters.type = ''
+}
+
+const handleTaskSizeChange = (size) => {
+  taskPagination.size = size
+}
+
+const handleTaskCurrentChange = (page) => {
+  taskPagination.page = page
+}
 
 const submitCreate = async () => {
   if (!createFormRef.value) return
   await createFormRef.value.validate(async (valid) => {
     if (valid) {
       showCreateDialog.value = false
+      stats.plans++
       ElMessage.success('随访计划创建成功')
       createForm.name = ''
       createForm.type = ''
@@ -296,6 +591,10 @@ const submitCreate = async () => {
     }
   })
 }
+
+onMounted(() => {
+  goToday()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -325,19 +624,28 @@ const submitCreate = async () => {
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
   margin-bottom: 24px;
 }
 
 .stat-card {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.25s ease;
+
+  &:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .stat-icon {
@@ -354,6 +662,8 @@ const submitCreate = async () => {
   &.completed { background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%); }
   &.overdue { background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%); }
   &.plan { background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%); }
+  &.patient { background: linear-gradient(135deg, #909399 0%, #b4b7bb 100%); }
+  &.rate { background: linear-gradient(135deg, #c0c4cc 0%, #d9dde3 100%); }
 }
 
 .stat-info {
@@ -370,13 +680,36 @@ const submitCreate = async () => {
 .stat-label {
   font-size: 14px;
   color: #909399;
+  margin-bottom: 4px;
+}
+
+.stat-trend {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  :deep(.el-icon) {
+    font-size: 12px;
+  }
+
+  &:has(:deep(.el-icon-arrow-up)) {
+    color: #67c23a;
+  }
+
+  &:has(:deep(.el-icon-arrow-down)) {
+    color: #f56c6c;
+  }
 }
 
 .tabs-container {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .filter-bar {
@@ -386,6 +719,235 @@ const submitCreate = async () => {
 .table-card {
   :deep(.el-table) {
     font-size: 14px;
+  }
+}
+
+.pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.calendar-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 24px;
+
+  .calendar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  :deep(.el-button) {
+    padding: 8px;
+  }
+}
+
+.calendar-body {
+  margin-bottom: 24px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+
+  .weekday {
+    text-align: center;
+    font-size: 14px;
+    color: #909399;
+    padding: 8px 0;
+    font-weight: 500;
+  }
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+
+  &.other-month {
+    color: #c0c4cc;
+  }
+
+  &.today {
+    background: #ecf5ff;
+
+    .day-number {
+      color: #409eff;
+      font-weight: 600;
+    }
+  }
+
+  &.has-task {
+    background: rgba(64, 158, 255, 0.08);
+  }
+
+  &.selected {
+    background: #409eff;
+    color: #fff;
+
+    .day-number {
+      color: #fff;
+    }
+
+    .task-dot {
+      background: #fff;
+    }
+  }
+
+  .day-number {
+    font-size: 14px;
+    color: #303133;
+  }
+
+  .task-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #409eff;
+    margin-top: 4px;
+  }
+}
+
+.calendar-detail {
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 16px;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #909399;
+
+  :deep(.el-icon) {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  p {
+    font-size: 14px;
+  }
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #ecf5ff;
+  }
+
+  &.pending {
+    border-left: 4px solid #e6a23c;
+  }
+
+  &.completed {
+    border-left: 4px solid #67c23a;
+  }
+
+  &.overdue {
+    border-left: 4px solid #f56c6c;
+    background: rgba(245, 108, 108, 0.05);
+  }
+
+  .task-time {
+    font-size: 14px;
+    color: #409eff;
+    font-weight: 500;
+    width: 80px;
+  }
+
+  .task-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .task-patient {
+      font-size: 14px;
+      font-weight: 500;
+      color: #303133;
+    }
+
+    .task-plan {
+      font-size: 12px;
+      color: #909399;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filter-bar {
+    :deep(.el-form-item) {
+      width: 100%;
+    }
+
+    :deep(.el-select),
+    :deep(.el-input) {
+      width: 100% !important;
+    }
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

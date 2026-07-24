@@ -25,7 +25,7 @@
       </div>
       <div class="stat-card blocked">
         <div class="stat-icon">
-          <el-icon><Block /></el-icon>
+          <el-icon><Close /></el-icon>
         </div>
         <div class="stat-info">
           <p class="stat-value">{{ stats.blockedRequests }}</p>
@@ -152,7 +152,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Warning, WarnTriangleFilled, Block, CircleCheckFilled } from '@element-plus/icons-vue'
+import { Warning, WarnTriangleFilled, Close, CircleCheckFilled } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const router = useRouter()

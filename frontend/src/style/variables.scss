@@ -1,0 +1,114 @@
+$primary-color: #409eff;
+$primary-light: #ecf5ff;
+$primary-dark: #3081f5;
+$primary-light-95: rgba(64, 158, 255, 0.05);
+$primary-light-90: rgba(64, 158, 255, 0.1);
+
+$success-color: #67c23a;
+$success-light: #f0f9eb;
+$success-light-95: rgba(103, 194, 58, 0.05);
+
+$warning-color: #e6a23c;
+$warning-light: #fdf6ec;
+$warning-light-95: rgba(230, 162, 60, 0.05);
+
+$danger-color: #f56c6c;
+$danger-light: #fef0f0;
+$danger-light-95: rgba(245, 108, 108, 0.05);
+
+$info-color: #909399;
+$info-light: #f5f7fa;
+
+$text-primary: #1a1a2e;
+$text-regular: #4a4a68;
+$text-secondary: #8e8ea9;
+$text-placeholder: #c0c4cc;
+
+$border-color: rgba(255, 255, 255, 0.2);
+$border-light: rgba(255, 255, 255, 0.1);
+$border-dark: rgba(0, 0, 0, 0.08);
+
+$bg-color: #f0f4f8;
+$bg-gradient-start: #e8ecf0;
+$bg-gradient-end: #f5f7fa;
+$bg-white: #ffffff;
+$bg-card: rgba(255, 255, 255, 0.85);
+$bg-card-hover: rgba(255, 255, 255, 0.95);
+
+$sidebar-bg: #0f1629;
+$sidebar-bg-light: #1a2339;
+$sidebar-hover: rgba(255, 255, 255, 0.08);
+$sidebar-active: #409eff;
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 16px;
+$radius-xl: 20px;
+$radius-round: 50%;
+$radius-pill: 9999px;
+
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-md: 14px;
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-xxl: 24px;
+$font-size-display: 32px;
+
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+$shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.1);
+$shadow-glow: 0 0 20px rgba(64, 158, 255, 0.15);
+
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+$transition-slow: 0.4s ease;
+
+$sidebar-width: 220px;
+$sidebar-collapsed-width: 64px;
+$header-height: 64px;
+
+$breakpoint-xs: 480px;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1400px;
+
+$backdrop-blur: blur(20px);
+$backdrop-blur-sm: blur(10px);
+
+$glass-border: 1px solid rgba(255, 255, 255, 0.2);
+$glass-bg: rgba(255, 255, 255, 0.7);
+$glass-bg-dark: rgba(15, 22, 41, 0.8);
+
+$gradient-primary: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+$gradient-success: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+$gradient-warning: linear-gradient(135deg, #e6a23c 0%, #ebb563 100%);
+$gradient-danger: linear-gradient(135deg, #f56c6c 0%, #f78989 100%);
+$gradient-info: linear-gradient(135deg, #909399 0%, #b4b7bb 100%);
+
+$gradient-bg: linear-gradient(135deg, #f0f4f8 0%, #e8ecf0 50%, #f5f7fa 100%);
+
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+$z-index-toast: 1080;
