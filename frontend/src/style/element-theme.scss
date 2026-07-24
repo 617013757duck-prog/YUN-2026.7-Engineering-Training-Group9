@@ -230,6 +230,43 @@
   border-radius: $radius-md;
   box-shadow: $shadow-lg;
   border: 1px solid $border-light;
+  background: #fff !important;
+
+  .el-dropdown-menu__item {
+    color: #303133 !important;
+
+    &:hover {
+      background: rgba(64, 158, 255, 0.06) !important;
+      color: $primary-color !important;
+    }
+  }
+}
+
+.el-select-dropdown {
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  border: 1px solid $border-light;
+  background: #fff !important;
+
+  .el-select-dropdown__item {
+    color: #303133 !important;
+    height: 36px;
+    line-height: 36px;
+
+    &:hover {
+      background: rgba(64, 158, 255, 0.06) !important;
+      color: $primary-color !important;
+    }
+
+    &.is-selected {
+      color: $primary-color !important;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .el-select-dropdown__empty {
+    color: #909399;
+  }
 }
 
 .el-checkbox__label {
@@ -243,6 +280,107 @@
 .el-date-picker .el-input__wrapper,
 .el-input-number .el-input__wrapper {
   border-radius: $radius-md;
+}
+
+.el-date-picker {
+  background: #fff !important;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  border: 1px solid $border-light;
+
+  .el-date-picker__header {
+    background: rgba(64, 158, 255, 0.04);
+    border-bottom: 1px solid $border-light;
+  }
+
+  .el-date-picker__title {
+    color: $text-primary;
+    font-weight: $font-weight-semibold;
+  }
+
+  .el-date-picker__nav-btn {
+    color: $text-secondary;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+
+  .el-date-table {
+    th {
+      color: $text-secondary;
+      font-weight: $font-weight-medium;
+    }
+
+    td {
+      color: $text-primary;
+
+      .el-date-table__cell {
+        border-radius: $radius-sm;
+        transition: all $transition-fast;
+
+        &:hover {
+          background: rgba(64, 158, 255, 0.06);
+        }
+
+        &.is-today {
+          color: $primary-color;
+          font-weight: $font-weight-semibold;
+        }
+
+        &.is-selected {
+          background: $gradient-primary;
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  .el-picker-panel__footer {
+    border-top: 1px solid $border-light;
+    padding: $spacing-md;
+
+    button {
+      border-radius: $radius-sm;
+    }
+  }
+}
+
+.el-time-picker {
+  background: #fff !important;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  border: 1px solid $border-light;
+
+  .el-time-picker__header {
+    background: rgba(64, 158, 255, 0.04);
+    border-bottom: 1px solid $border-light;
+  }
+
+  .el-time-panel {
+    .el-time-panel__content {
+      .el-time-panel__btn {
+        color: $text-primary;
+
+        &:hover {
+          color: $primary-color;
+        }
+      }
+
+      .el-time-panel__item {
+        color: $text-primary;
+
+        &:hover {
+          background: rgba(64, 158, 255, 0.06);
+        }
+
+        &.active {
+          background: $gradient-primary;
+          color: #fff;
+        }
+      }
+    }
+  }
 }
 
 .el-scrollbar__bar {

@@ -1,6 +1,6 @@
 <template>
   <div class="layout-container">
-    <header class="layout-header">
+    <header class="layout-header" :class="{ 'sidebar-collapsed': isCollapse }">
       <div class="header-left">
         <button class="menu-toggle" @click="toggleSidebar">
           <el-icon :size="20"><Menu v-if="isMobile || isCollapse" /><Close v-else /></el-icon>
@@ -113,7 +113,7 @@
       </div>
     </aside>
     <div v-if="isMobile && showMobileSidebar" class="sidebar-mask" @click="showMobileSidebar = false"></div>
-    <main class="layout-main" :class="{ 'mobile-full': isMobile && showMobileSidebar }">
+    <main class="layout-main" :class="{ 'mobile-full': isMobile && showMobileSidebar, 'sidebar-collapsed': isCollapse }">
       <router-view v-slot="{ Component }">
         <transition name="fade-slide" mode="out-in">
           <component :is="Component" />
@@ -247,6 +247,10 @@ onUnmounted(() => {
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
   z-index: 100;
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.sidebar-collapsed {
+    left: 64px;
+  }
 
   .header-left {
     display: flex;
@@ -404,6 +408,42 @@ onUnmounted(() => {
     font-size: 12px;
     color: #8e8ea9;
   }
+
+  :deep(.el-dropdown-menu) {
+    background: #fff !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    padding: 4px 0 !important;
+    margin-top: 8px !important;
+
+    .el-dropdown-menu__item {
+      color: #303133 !important;
+      font-size: 13px !important;
+      height: 40px !important;
+      line-height: 40px !important;
+      padding: 0 20px !important;
+      margin: 0 4px !important;
+      border-radius: 6px !important;
+      transition: all 0.2s !important;
+
+      &:hover {
+        background: rgba(64, 158, 255, 0.06) !important;
+        color: #409eff !important;
+      }
+
+      &.is-divided {
+        border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+      }
+
+      .el-icon {
+        margin-right: 8px !important;
+        font-size: 14px !important;
+      }
+    }
+  }
 }
 
 .layout-sidebar {
@@ -448,6 +488,12 @@ onUnmounted(() => {
       padding-left: 0 !important;
       padding-right: 0 !important;
       border-left: none !important;
+    }
+
+    :deep(.el-sub-menu .el-menu-item) {
+      margin: 0 12px !important;
+      padding-left: 0 !important;
+      justify-content: center;
     }
 
     .menu-icon-wrapper {
@@ -629,7 +675,7 @@ onUnmounted(() => {
 
     .menu-badge {
       margin-left: 6px;
-      margin-right: 2px;
+      margin-right: 8px;
       background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
       color: #fff;
       font-size: 10px;
@@ -758,6 +804,10 @@ onUnmounted(() => {
   &.mobile-full {
     left: 0;
   }
+
+  &.sidebar-collapsed {
+    left: 64px;
+  }
 }
 
 .fade-slide-enter-active,
@@ -780,6 +830,10 @@ onUnmounted(() => {
     left: 0;
     padding: 0 14px;
 
+    &.sidebar-collapsed {
+      left: 64px;
+    }
+
     .header-center {
       display: none;
     }
@@ -798,12 +852,20 @@ onUnmounted(() => {
   .layout-main {
     left: 0;
     padding: 14px;
+
+    &.sidebar-collapsed {
+      left: 64px;
+    }
   }
 }
 
 @media (min-width: 769px) and (max-width: 992px) {
   .layout-header {
     left: 240px;
+
+    &.sidebar-collapsed {
+      left: 64px;
+    }
   }
 
   .layout-sidebar {
@@ -812,6 +874,10 @@ onUnmounted(() => {
 
   .layout-main {
     left: 240px;
+
+    &.sidebar-collapsed {
+      left: 64px;
+    }
   }
 }
 
